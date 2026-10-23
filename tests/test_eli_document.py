@@ -1,5 +1,7 @@
-"""The ELI document check (hooks/eli-document.py), run as Claude Code runs it:
-a process, the PostToolUse payload as JSON on stdin.
+"""The document check (hooks/eli-document.py), run as Claude Code runs it: a
+process, the PostToolUse payload as JSON on stdin. It blocks (exit 2) a document
+that is not a self-contained HTML page with visuals, and warns about the rest,
+the ELI levels first.
 
 The check asks docpin what a document is; these tests point it at nothing
 (ELI_DOCUMENT_ANNOTATE="") for the docs/ fallback, or at a fake `annotate`
@@ -13,6 +15,7 @@ import os
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 import pytest
@@ -35,22 +38,42 @@ def page(body: str, top: list[str] | None = None) -> str:
     return "\n".join(lines) + "\n"
 
 
-def run(payload: object, *, docpin: str = "", env: dict[str, str] | None = None) -> str | None:
-    """The hook's additionalContext, or None when it says nothing. It must exit 0 either way."""
-    environment = {**os.environ, "ELI_DOCUMENT_ANNOTATE": docpin}
+# A home of its own: a real ~/.claude/eli-off on the machine running the tests would silence
+# the whole suite, and every test would then pass for the wrong reason.
+HOME = tempfile.mkdtemp(prefix="eli-home-")
+
+
+def hook(payload: object, *, docpin: str = "", env: dict[str, str] | None = None
+         ) -> tuple[int, str | None, str]:
+    """(exit code, additionalContext or None, stderr) of one run of the hook."""
+    environment = {**os.environ, "ELI_DOCUMENT_ANNOTATE": docpin, "HOME": HOME}
     environment.pop("CLAUDE_PROJECT_DIR", None)   # the session running the tests may set it
     environment.update(env or {})
     raw = payload if isinstance(payload, str) else json.dumps(payload)
-    done = subprocess.run([sys.executable, str(HOOK)], check=False, input=raw, capture_output=True, text=True,
-                          timeout=30, env=environment)
-    assert done.returncode == 0, done.stderr      # a warning never blocks, a crash never either
-    assert done.stderr == ""
-    if not done.stdout.strip():
-        return None
-    output = json.loads(done.stdout)["hookSpecificOutput"]
-    assert output["hookEventName"] == "PostToolUse"
-    assert set(output) == {"hookEventName", "additionalContext"}
-    return output["additionalContext"]
+    done = subprocess.run([sys.executable, str(HOOK)], check=False, input=raw, capture_output=True,
+                          text=True, timeout=30, env=environment)
+    assert done.returncode in (0, 2), done.stderr
+    context = None
+    if done.stdout.strip():
+        output = json.loads(done.stdout)["hookSpecificOutput"]
+        assert output["hookEventName"] == "PostToolUse"
+        assert set(output) == {"hookEventName", "additionalContext"}
+        context = output["additionalContext"]
+    return done.returncode, context, done.stderr
+
+
+def run(payload: object, *, docpin: str = "", env: dict[str, str] | None = None) -> str | None:
+    """The hook's additionalContext, or None when it says nothing; it must not block."""
+    code, context, stderr = hook(payload, docpin=docpin, env=env)
+    assert code == 0 and stderr == "", stderr
+    return context
+
+
+def blocked(payload: object, **kwargs) -> str:
+    """The reason the hook gives when it blocks; it must block."""
+    code, context, stderr = hook(payload, **kwargs)
+    assert code == 2 and context is None, (code, context)
+    return stderr
 
 
 def written(project: Path, relative: str, text: str, tool: str = "Write") -> dict[str, object]:
@@ -114,6 +137,8 @@ def test_markers_quoted_in_the_text_or_misnamed_mark_nothing(tmp_path, markup):
     "<!-- ELI : Exemption – reason -->",
     "<!-- eli : dérogation — une transcription -->",   # the French word is accepted too
     "<!-- eli: derogation - raw data -->",
+    "<!-- visual: exemption - kept from visual-first -->",   # the markers of the check it replaces
+    "<!-- visuel : dérogation — motif -->",
 ])
 def test_an_exemption_in_the_first_five_lines_silences_it(tmp_path, marker):
     four_before = ["<!-- 1 -->", "<!-- 2 -->", "<!-- 3 -->", "<!-- 4 -->"]
@@ -128,7 +153,7 @@ def test_an_exemption_on_the_sixth_line_is_too_late(tmp_path):
 
 @pytest.mark.parametrize("marker", [
     "<!-- eli: exemption -->",                         # no reason given
-    "<!-- visuel : dérogation — motif -->",            # the visual-first exemption is another check
+    "<!-- elk: exemption — reason -->",                # another check's marker
     "<!-- eli exemption — reason -->",                 # no colon
 ])
 def test_an_exemption_without_reason_or_for_another_check_does_not_count(tmp_path, marker):
@@ -144,15 +169,18 @@ def test_without_docpin_a_docs_folder_decides(tmp_path):
     assert run(written(tmp_path, "a.html", page(FLAT))) is None
 
 
-@pytest.mark.parametrize("folder", ["plans", "drafts", "figures", "node_modules"])
+@pytest.mark.parametrize("folder", ["plans", "drafts", "brouillons", "figures", "node_modules"])
 def test_working_notes_and_figure_sources_are_never_covered(tmp_path, folder):
     assert run(written(tmp_path, f"docs/{folder}/a.html", page(FLAT))) is None
     assert run(written(tmp_path, "docs/a.html", page(FLAT))) is not None   # the twin
 
 
-def test_markdown_is_not_judged(tmp_path):
-    assert run(written(tmp_path, "docs/a.md", "# A flat note\n")) is None
-    assert run(written(tmp_path, "docs/a.html", page(FLAT))) is not None
+def test_a_markdown_document_is_blocked_but_not_a_readme(tmp_path):
+    said = blocked(written(tmp_path, "docs/a.md", "# A flat note\n"))
+    assert said.startswith("a.md: a Markdown deliverable")
+    assert "Rework it now" in said and "<!-- eli: exemption — reason -->" in said
+    for name in ("README.md", "CLAUDE.md", "SKILL.md"):
+        assert run(written(tmp_path, f"docs/{name}", "# Text is the deliverable\n")) is None
 
 
 @pytest.mark.parametrize("tool, expected", [("Write", True), ("Edit", True), ("MultiEdit", True),
@@ -211,7 +239,7 @@ def test_a_broken_docpin_falls_back_to_the_docs_rule(tmp_path):
 def test_docpin_is_not_asked_about_what_is_never_covered(tmp_path):
     script, log = fake_annotate(tmp_path, 0)
     assert run(written(tmp_path, "docs/plans/a.html", page(FLAT)), docpin=str(script)) is None
-    assert run(written(tmp_path, "docs/a.md", "# note\n"), docpin=str(script)) is None
+    assert run(written(tmp_path, "docs/README.md", "# note\n"), docpin=str(script)) is None
     assert not log.exists()
 
 
@@ -234,6 +262,55 @@ def test_a_page_that_is_not_utf8_is_still_judged(tmp_path):
     payload = written(tmp_path, "docs/a.html", "")
     Path(payload["tool_input"]["file_path"]).write_bytes(page(FLAT).encode("utf-8") + b"\xff\xfe")
     assert run(payload) is not None
+
+
+# -- visuals and self-containment: what the visual-first check did --------------------------
+
+@pytest.mark.parametrize("body", ["<main data-eli='lambda'><p>Only words.</p></main>",
+                                  '<div class="mermaid">graph TD; A-->B</div>'])
+def test_an_html_page_without_a_visual_is_blocked(tmp_path, body):
+    said = blocked(written(tmp_path, "docs/words.html", page(body)))
+    assert said.startswith("words.html: no visual in this HTML page")
+    assert ("mermaid block draws nothing" in said) is ("mermaid" in body)
+
+
+@pytest.mark.parametrize("visual", ['<svg viewBox="0 0 1 1"></svg>', '<img src="a.png" alt="">',
+                                    "<canvas></canvas>", "<table><tr><td>1</td></tr></table>"])
+def test_each_kind_of_visual_counts(tmp_path, visual):
+    body = f'<main data-eli="lambda">{visual}</main><dialog data-eli="initiate"></dialog>'
+    assert run(written(tmp_path, "docs/v.html", page(body))) is None
+
+
+def test_a_page_that_loads_from_the_network_warns(tmp_path):
+    body = BOTH + '<script src="https://cdn.example.org/lib.js"></script>'
+    said = run(written(tmp_path, "docs/net.html", page(body)))
+    assert said is not None and "loads from the network: https://cdn.example.org/lib.js" in said
+
+
+def test_more_than_four_paragraphs_per_visual_warns(tmp_path):
+    assert run(written(tmp_path, "docs/p.html", page(BOTH + "<p>x</p>" * 3))) is None   # BOTH holds one already
+    said = run(written(tmp_path, "docs/p.html", page(BOTH + "<p>x</p>" * 4)))
+    assert said is not None and "5 paragraphs for 1 visual(s)" in said
+
+
+def test_a_heavy_image_warns_until_git_tracks_it(tmp_path):
+    subprocess.run(["git", "init", "-q", str(tmp_path)], check=True)
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "docs" / "big.png").write_bytes(b"0" * 1_000_001)
+    body = BOTH + '<img src="big.png" alt="">'
+    said = run(written(tmp_path, "docs/i.html", page(body)))
+    assert said is not None and "big.png weighs 1.0 MB" in said
+    subprocess.run(["git", "-C", str(tmp_path), "add", "docs/big.png"], check=True)
+    assert run(written(tmp_path, "docs/i.html", page(body))) is None
+
+
+def test_the_off_switch_silences_it_and_only_it_does(tmp_path):
+    home = tmp_path / "home"
+    (home / ".claude").mkdir(parents=True)
+    payload = written(tmp_path, "docs/a.md", "# note\n")
+    assert blocked(payload, env={"HOME": str(home)})
+    (home / ".claude" / "eli-off").touch()
+    assert run(payload, env={"HOME": str(home)}) is None
 
 
 # -- the template of the eli:documents skill ---------------------------------------------------

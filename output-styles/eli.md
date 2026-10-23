@@ -111,12 +111,39 @@ ELI-lambda surface ──click──▶ ELI-initiate zoom ──"Under the hood"
 
 - The form, the `data-eli` convention and the template: the **`eli:documents`** skill; follow
   it for every document.
-- The `eli-document` check reads the document as it is written and warns when a level is
-  missing. If it does, rework the document before anything else. A page that has a single level
-  by nature carries `<!-- eli: exemption — reason -->` in its first five lines.
+- The `eli-document` check reads the document as it is written: it **blocks** a Markdown
+  document or an HTML page with no visual, and **warns** about a missing level, a page that
+  loads from the network, or too much prose per visual. If it speaks, rework the document
+  before anything else. A page whose form is justified (a transcript, raw data) carries
+  `<!-- eli: exemption — reason -->` in its first five lines.
 
 Markdown stays the form of what the text IS the deliverable of: `CLAUDE.md`, README, commit
 messages, hand-over notes and work plans.
+
+## Writing, at every level
+
+- **Fewer sentences, but whole ones.** Cut what adds nothing — preamble, a rewording of what
+  was just shown, a conclusion that repeats the table above. Never cut the words that carry
+  the meaning: a telegraphic style makes the reader guess, which costs more than the words
+  saved. A table row or a diagram label must read on its own.
+- **Jargon is paid for on the spot.** A term of the project — a concept name, an abbreviation —
+  is explained in a few words the first time it appears in a conversation, or not used.
+- **No opaque reference.** A ticket number, an id, a commit, a path: give its meaning in place,
+  in two or three words — `#4 (tablet cleanup)`, not `#4`.
+- **A question is a comparison too**: the options go in a table or a sketch, not one paragraph
+  each; what sets them apart must show without a second reading.
+- **Symbols have a fixed meaning**; outside this table, a symbol comes with its legend or not
+  at all.
+
+| Symbol | Means | Not to be confused with |
+|---|---|---|
+| `→` | implies, leads to | a sequence in time — that is a diagram |
+| `⇔` | if and only if | |
+| `∴` | therefore | |
+| `≈` | in the order of | |
+| `≠` | differs from | |
+| `⊂` | is included in, is a case of | |
+| `✓ ✗ ⚠` | checked / failed / caveat | decoration |
 
 ## The end of a reply: the "TO DO" block
 

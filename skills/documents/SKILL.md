@@ -72,18 +72,42 @@ meets going up, which keeps the note in place when the document changes.
 | ELI-Architect descent | a diagram of the components and their flows; the number that constrains; a table of options and the trade-off | code, function names |
 | ELI-Tech insert | path, signature, command, short excerpt; the edge case | a lecture |
 
+## What calls for a picture
+
+In a document, an idea is **drawn first**; prose keeps only what does not draw — a trade-off, a
+doubt, a nuance. The test is not length but the presence of something to understand:
+
+| The passage carries | Example | Form |
+|---|---|---|
+| a concept, a notion of the project | what a "lease" or a "recipe" is | annotated SVG diagram |
+| a mechanism | what happens when the resource is already taken | diagram, before/after |
+| a flow between several actors | who writes what, in which order, where | swimlanes, sequence |
+| an example, a use case | the real gesture, from start to finish | numbered route |
+| a comparison on several dimensions | three options, four criteria | table, coloured matrix |
+| a number that matters | 12 gestures, 9 traps | tile, gauge, bar |
+
+A picture must not cost more than the paragraph it replaces: a two-node diagram, or an image
+that repeats the title above it, is a regression.
+
+Figures are **sober**: what is made to stop a scrolling thumb is not made to be read. Light
+background (dark follows the system), few colours, **each one carrying a distinction**,
+saturated enough to tell apart at a glance — monochrome is not neutral, it is dull. A figure
+rendered as an image keeps its source next to it, so it is edited rather than redone, and stays
+light: render it at scale 1, under 1 MB.
+
 ## Traps
 
 - **`dlg.show()`, never `showModal()`**: the browser's top layer would sit above docpin's note
   bubble, and a note pinned in a zoom would open out of sight.
-- The text of a figure reads at its **displayed** size: the template draws architecture
-  diagrams vertically, with a narrow `viewBox`, so they stay legible on a phone.
+- The text of a figure reads at its **displayed** size: a 1080 px image shown at 500 px halves
+  its type. Aim for 14 px displayed at least; the template draws architecture diagrams
+  vertically, with a narrow `viewBox`, so they stay legible on a phone.
 - A note pinned inside a closed `<details>` shows on its visible ancestor: that is expected.
 
 ## Before handing over the link
 
-1. The `eli-document` check stayed silent. A page with a single level by nature (a transcript,
-   raw data) carries `<!-- eli: exemption — reason -->` in its first five lines.
+1. The `eli-document` check stayed silent. A page whose form is justified (a transcript, raw
+   data) carries `<!-- eli: exemption — reason -->` in its first five lines.
 2. You **looked at the rendered page** — light, dark, at phone width — and opened at least one
    zoom and its descent.
 3. In the reply: the link to the surface, and one line on what to look at first.
