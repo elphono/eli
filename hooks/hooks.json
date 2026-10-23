@@ -1,0 +1,13 @@
+{
+  "description": "Warn when a document just written does not carry the ELI levels",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {"type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/eli-document.py", "timeout": 30}
+        ]
+      }
+    ]
+  }
+}

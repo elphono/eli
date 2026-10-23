@@ -1,0 +1,11 @@
+{
+  "name": "eli",
+  "displayName": "ELI — explain by levels",
+  "version": "0.1.0",
+  "description": "Claude explains top-down, by named levels (ELI-lambda, ELI-initiate, ELI-Architect, ELI-Tech): plain words and a diagram first, the technical detail one word away; documents open on a simple surface that zooms into the detail",
+  "author": {"name": "elphono", "url": "https://github.com/elphono"},
+  "homepage": "https://github.com/elphono/eli",
+  "repository": "https://github.com/elphono/eli",
+  "license": "MIT",
+  "keywords": ["output-style", "explanation", "documentation", "diagrams", "html"]
+}

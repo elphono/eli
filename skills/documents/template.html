@@ -1,0 +1,784 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Subject name</title>
+<!--
+  ELI template: the eli:documents skill (skills/documents/SKILL.md of the eli plugin).
+  ELI-lambda surface (main) -> ELI-initiate zoom (dialog) -> "Under the hood" ELI-Architect
+  (details.descent) -> ELI-Tech insert (details.tech).
+  Replace every sample text. Keep the data-eli and data-zoom attributes and the ids.
+-->
+<style>
+:root{
+  --bg:#fbfaf7; --fg:#1d1f23; --muted:#5d636d; --line:#d9d6cf; --card:#ffffff; --soft:#efefed;
+  --you:#c2410c; --you-bg:#fdeee4; --sys:#1f5fbf; --sys-bg:#e2ecfb;
+  --key:#7c3aed; --key-bg:#efe7fd; --ok:#1f8a4c; --ok-bg:#e3f4ea;
+  --on-accent:#ffffff;
+  --shadow:0 1px 2px rgba(0,0,0,.05), 0 10px 28px rgba(0,0,0,.07);
+  --scrim:rgba(20,22,26,.48);
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#16181c; --fg:#e8e6e1; --muted:#a3a8b1; --line:#3a3e45; --card:#1f2228; --soft:#2a2d33;
+    --you:#f59e5b; --you-bg:#3a2414; --sys:#6ea3f5; --sys-bg:#172741;
+    --key:#b394f7; --key-bg:#2a1f45; --ok:#4cc982; --ok-bg:#16301f;
+    --on-accent:#16181c;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px rgba(0,0,0,.35);
+    --scrim:rgba(0,0,0,.62);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#16181c; --fg:#e8e6e1; --muted:#a3a8b1; --line:#3a3e45; --card:#1f2228; --soft:#2a2d33;
+  --you:#f59e5b; --you-bg:#3a2414; --sys:#6ea3f5; --sys-bg:#172741;
+  --key:#b394f7; --key-bg:#2a1f45; --ok:#4cc982; --ok-bg:#16301f;
+  --on-accent:#16181c;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px rgba(0,0,0,.35);
+  --scrim:rgba(0,0,0,.62);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+html:has(dialog[open]){overflow:hidden}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:1240px;margin:0 auto;padding:44px 24px 48px}
+code,pre{font-family:ui-monospace,"Cascadia Code","SF Mono",Menlo,Consolas,monospace}
+
+/* ---------- Surface: ELI-lambda ---------- */
+header{margin:0 0 34px}
+h1{margin:0;line-height:1.05}
+.brand{display:block;font-size:56px;font-weight:800;letter-spacing:-.025em}
+.tag{display:block;font-size:28px;font-weight:650;color:var(--sys);margin-top:8px;letter-spacing:-.01em}
+.sub{font-size:20px;margin:16px 0 0;color:var(--muted)}
+.you{color:var(--you);font-weight:700}
+.sys{color:var(--sys);font-weight:700}
+
+/* The levels of the page, as a ladder: what the reader can open, and how */
+.ladder{list-style:none;margin:20px 0 0;padding:0;display:flex;flex-wrap:wrap;align-items:center;gap:6px 4px;font-size:14px;line-height:1.3}
+.ladder li{display:inline-flex;align-items:center;gap:7px;border-radius:999px;padding:5px 12px 5px 6px;background:var(--soft);border:1px solid var(--line)}
+.ladder li b{border-radius:999px;padding:2px 8px;color:var(--on-accent);font-weight:750;white-space:nowrap}
+.ladder .l b{background:var(--you)} .ladder .i b{background:var(--sys)}
+.ladder .a b{background:var(--key)} .ladder .t b{background:var(--muted)}
+.ladder .step-to{background:none;border:0;padding:0;color:var(--muted)}
+.ladder .step-to svg path{fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+
+/* State marks: a dot and two words */
+.state{display:inline-flex;align-items:center;gap:7px;font-size:14px;font-weight:700;line-height:1.2;white-space:nowrap;
+  border-radius:999px;padding:4px 11px 4px 9px}
+.state::before{content:"";flex:none;width:10px;height:10px;border-radius:50%}
+.state.ok{background:var(--ok-bg);color:var(--ok)}
+.state.ok::before{background:var(--ok)}
+.state.wip{background:var(--card);color:var(--sys);box-shadow:inset 0 0 0 1.5px var(--sys)}
+.state.wip::before{box-shadow:inset 0 0 0 2px var(--sys);background:linear-gradient(90deg,var(--sys) 50%,transparent 50%)}
+
+/* What can be clicked */
+.zoomable{cursor:zoom-in;-webkit-tap-highlight-color:transparent;transition:translate .18s ease, box-shadow .18s ease, background-color .18s ease}
+.zoomable:focus{outline:none}
+.zoomable:focus-visible{outline:3px solid var(--sys);outline-offset:5px}
+
+/* The steps (optional loop) */
+figure{margin:0}
+.loop{
+  --ag:40px;
+  margin:0;padding:0;position:relative;display:grid;
+  grid-template-columns:minmax(0,1fr) var(--ag) minmax(0,1fr) var(--ag) minmax(0,1fr) var(--ag) minmax(0,1fr);
+  grid-template-rows:auto auto auto auto;row-gap:0;
+}
+.step{
+  grid-row:1 / span 3;display:grid;grid-template-rows:subgrid;row-gap:18px;
+  background:var(--card);border:1px solid var(--line);border-top:6px solid var(--who);
+  border-radius:16px;padding:40px 18px 20px;box-shadow:var(--shadow);position:relative;
+}
+.step:hover{translate:0 -4px;box-shadow:0 0 0 3px color-mix(in srgb, var(--who) 30%, transparent), var(--shadow)}
+.step > .state{position:absolute;top:9px;right:12px}
+.step.you-s{--who:var(--you);--who-bg:var(--you-bg)}
+.step.sys-s{--who:var(--sys);--who-bg:var(--sys-bg)}
+.step.key-s{--who:var(--key);--who-bg:var(--key-bg)}
+.s1{grid-column:1}.s2{grid-column:3}.s3{grid-column:5}.s4{grid-column:7}
+.head{display:block}
+.num{position:absolute;left:16px;top:-27px;width:50px;height:50px;border-radius:50%;background:var(--who);color:var(--on-accent);
+  display:grid;place-items:center;font-size:26px;font-weight:800;box-shadow:0 0 0 5px var(--bg)}
+.ttl{margin:0;font-size:22px;line-height:1.2;font-weight:750}
+.nw{white-space:nowrap}
+.vis{align-self:center;display:flex;flex-direction:column;align-items:center;gap:12px;
+  background:var(--who-bg);border-radius:14px;padding:16px 12px}
+.vis svg.pic path,.vis svg.pic circle,.vis svg.pic rect{fill:none;stroke:var(--who);stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.vis svg.pic .fill{fill:var(--who);stroke:none}
+.leg{margin:0;font-size:15px;line-height:1.45;color:var(--muted);align-self:start}
+.leg b{color:var(--fg)}
+.chips{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;justify-content:center;gap:6px}
+.chips li{font-size:14px;font-weight:650;line-height:1.3;color:var(--who);background:var(--card);border-radius:999px;padding:4px 11px}
+.switch{display:flex;width:100%;max-width:220px;height:54px;padding:5px;border-radius:999px;background:var(--card);
+  border:3px solid var(--key)}
+.switch span{flex:1 1 0;min-width:0;display:grid;place-items:center;border-radius:999px;font-size:17px;font-weight:750;color:var(--muted)}
+.switch .on{background:var(--key);color:var(--on-accent)}
+.btns{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.btn{display:inline-flex;align-items:center;gap:6px;font-size:16px;font-weight:750;border-radius:10px;padding:7px 12px;border:2px solid var(--you)}
+.btn.main{background:var(--you);color:var(--on-accent)}
+.btn.alt{background:var(--card);color:var(--you)}
+
+.next{grid-row:2;align-self:center;justify-self:center;display:grid;place-items:center}
+.n1{grid-column:2}.n2{grid-column:4}.n3{grid-column:6}
+.next svg{display:block}
+.next path{fill:none;stroke:var(--muted);stroke-width:3.5;stroke-linecap:round;stroke-linejoin:round}
+
+/* Return arrow: the loop (remove both blocks when the subject is not a loop) */
+.ret-path{grid-row:4;grid-column:1 / -1;position:relative;height:136px}
+.u{position:absolute;left:calc((100% - 3 * var(--ag)) / 8);right:calc((100% - 3 * var(--ag)) / 8);
+  top:16px;height:66px;border:3px solid var(--sys);border-top:0;border-radius:0 0 34px 34px}
+.u::after{content:"";position:absolute;left:-10.5px;top:-16px;width:0;height:0;
+  border-left:9px solid transparent;border-right:9px solid transparent;border-bottom:15px solid var(--sys)}
+.u::before{content:"";position:absolute;right:-8.5px;top:-6px;width:11px;height:11px;border-radius:50%;background:var(--sys)}
+.ret{grid-row:4;grid-column:1 / -1;justify-self:center;align-self:start;position:relative;top:80px;transform:translateY(-50%);
+  max-width:660px;z-index:1}
+.ret:hover{translate:0 -3px}
+.ret-label{position:relative;display:flex;align-items:center;gap:14px;margin:0;background:var(--sys-bg);border:2px solid var(--sys);
+  border-radius:14px;padding:12px 18px 10px;font-size:16px;line-height:1.4}
+.ret-label b{color:var(--sys)}
+.ret-label svg{flex:none}
+.ret-label svg path{fill:none;stroke:var(--sys);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.ret-label .state{position:absolute;top:-15px;right:16px}
+
+/* Proof strip: what is done, what stands */
+.proof{margin-top:8px;border-top:1px solid var(--line);padding-top:8px}
+.proof-in{margin:0 -10px;padding:10px 10px 12px;border-radius:14px}
+.proof-in:hover{translate:0 -3px;background:color-mix(in srgb, var(--ok) 8%, transparent)}
+.proof-head{margin:0 0 12px;font-size:15px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center}
+.proof-head strong{color:var(--fg);font-weight:700}
+.proof ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.proof li{display:flex;gap:9px;align-items:flex-start;font-size:15px;line-height:1.4;background:var(--card);
+  border:1px solid var(--line);border-radius:10px;padding:9px 12px}
+.proof li svg{flex:none;margin-top:1px}
+.tick circle{fill:var(--ok-bg);stroke:var(--ok);stroke-width:1.5}
+.tick path{fill:none;stroke:var(--ok);stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+
+/* ---------- Zooms: ELI-initiate ---------- */
+/* A plain fixed overlay (dlg.show(), never showModal()): the browser's top layer would sit above
+   docpin's note bubble, and a note pinned inside a zoom would open out of sight. */
+dialog.zoom{position:fixed;inset:0;z-index:1000;width:100%;height:100%;max-width:none;max-height:none;
+  margin:0;padding:16px;border:0;background:var(--scrim);color:var(--fg);overflow:auto;
+  display:none;align-items:center;justify-content:center}
+dialog.zoom[open]{display:flex}
+dialog.zoom>.box{width:min(780px,100%)}
+dialog.zoom:focus,dialog.zoom:focus-visible{outline:none}
+dialog.zoom.you-s{--who:var(--you)}
+dialog.zoom.sys-s{--who:var(--sys)}
+dialog.zoom.key-s{--who:var(--key)}
+dialog.zoom.ok-s{--who:var(--ok)}
+.box{background:var(--card);border:1px solid var(--line);border-top:6px solid var(--who);border-radius:18px;
+  box-shadow:0 24px 64px rgba(0,0,0,.32);max-height:calc(100dvh - 32px);overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;
+  padding:0 26px 22px}
+.box-head{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:14px;padding:20px 0 14px;background:var(--card)}
+.bn{flex:none;width:46px;height:46px;border-radius:50%;background:var(--who);color:var(--on-accent);
+  display:grid;place-items:center;font-size:23px;font-weight:800}
+.bn svg path{fill:none;stroke:var(--on-accent);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.ttl-wrap{flex:1;min-width:0}
+.box-head h2{margin:2px 0 0;font-size:26px;line-height:1.15;font-weight:750;letter-spacing:-.01em}
+.x{flex:none;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--soft);color:var(--fg);
+  display:grid;place-items:center;cursor:pointer;padding:0}
+.x:hover{background:var(--line)}
+.x:focus-visible{outline:3px solid var(--sys);outline-offset:2px}
+.x svg path{fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round}
+.lead{margin:0 0 16px;font-size:17px;line-height:1.45;color:var(--muted)}
+.lead b{color:var(--fg)}
+
+/* Level badges */
+.lvl{display:inline-block;font-size:13px;font-weight:750;letter-spacing:.02em;line-height:1.2;border-radius:999px;padding:3px 9px;white-space:nowrap}
+.lvl.i{background:var(--sys-bg);color:var(--sys)}
+.lvl.a{background:var(--key-bg);color:var(--key)}
+.lvl.t{background:var(--soft);color:var(--fg);box-shadow:inset 0 0 0 1px var(--line)}
+
+/* The mechanism, drawn as a short chain */
+.chain{list-style:none;margin:0 0 4px;padding:14px;display:flex;align-items:stretch;gap:8px;background:var(--soft);border-radius:14px}
+.chain li{flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:4px;background:var(--card);border:2px solid var(--who);
+  border-radius:12px;padding:10px 12px;font-size:15px;line-height:1.35}
+.chain li b{color:var(--who);font-size:14px}
+.chain .to{flex:none;align-self:center;background:none;border:0;padding:0}
+.chain .to svg path{fill:none;stroke:var(--muted);stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+
+/* lines with a short label */
+.rows{list-style:none;margin:18px 0 0;padding:0;display:grid;gap:10px}
+.rows li{display:grid;grid-template-columns:170px minmax(0,1fr);gap:14px;align-items:baseline;font-size:17px;line-height:1.45}
+.rows .lab{font-size:15px;font-weight:750;color:var(--who)}
+
+/* what works / not yet */
+.cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:18px}
+.col{border-radius:14px;padding:13px 15px 15px;background:var(--c-bg);border:1px solid color-mix(in srgb, var(--c) 35%, transparent)}
+.col.ok{--c:var(--ok);--c-bg:var(--ok-bg)}
+.col.nt{--c:var(--muted);--c-bg:var(--soft)}
+.col-h{margin:0 0 9px;font-size:15px;font-weight:800;line-height:1.3;color:var(--c);display:flex;gap:8px;align-items:flex-start}
+.col-h svg{flex:none;margin-top:1px}
+.col-h svg path,.col-h svg circle{fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.list{list-style:none;margin:0;padding:0;display:grid;gap:7px}
+.list li{position:relative;padding-left:17px;font-size:16px;line-height:1.4}
+.list li::before{content:"";position:absolute;left:2px;top:.55em;width:7px;height:7px;border-radius:50%;background:var(--c)}
+.box-state{margin:20px 0 0;padding-top:14px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;
+  align-items:center;gap:8px 12px;font-size:16px;line-height:1.45}
+.done{list-style:none;margin:0;padding:0;display:grid;gap:9px}
+.done li{display:flex;gap:11px;align-items:flex-start;font-size:17px;line-height:1.45;background:var(--soft);border-radius:12px;padding:10px 13px}
+.done li svg{flex:none;margin-top:2px}
+
+/* ---------- Descent: ELI-Architect ---------- */
+details.descent{margin-top:18px;border:2px solid var(--key);border-radius:14px;background:var(--card)}
+/* A link to a level scrolls it under the sticky head of the zoom: keep its summary in sight. */
+details.descent,details.tech{scroll-margin-top:110px}
+details.descent > summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:12px 14px;
+  border-radius:12px;background:var(--key-bg);font-weight:700;font-size:16px;line-height:1.3}
+details.descent > summary::-webkit-details-marker{display:none}
+details.descent > summary:focus-visible{outline:3px solid var(--key);outline-offset:2px}
+details.descent[open] > summary{border-radius:12px 12px 0 0}
+.sum-t{flex:1;min-width:0}
+.chev{flex:none;transition:transform .18s ease}
+.chev path{fill:none;stroke:var(--key);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+details[open] > summary .chev{transform:rotate(180deg)}
+.descent-body{padding:14px 16px 16px}
+.arch{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:center;margin:0 0 14px}
+.arch-svg{width:100%;max-width:320px;height:auto;display:block}
+.arch-svg .node{fill:var(--card);stroke:var(--key);stroke-width:2.5}
+.arch-svg .node.store{fill:var(--key-bg)}
+.arch-svg .t1{fill:var(--fg);font:700 17px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.arch-svg .t2{fill:var(--muted);font:500 16px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.arch-svg .edge{fill:none;stroke:var(--key);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.arch-svg .lbl{fill:var(--key);font:700 16px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.target{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:160px;max-width:220px;text-align:center;
+  background:var(--key-bg);border-radius:14px;padding:14px 16px}
+.target-n{font-size:34px;font-weight:800;color:var(--key);line-height:1}
+.target-l{font-size:15px;line-height:1.35;color:var(--fg)}
+table.opts{width:100%;border-collapse:collapse;font-size:15px;line-height:1.4}
+table.opts th{text-align:left;font-size:14px;color:var(--muted);font-weight:700;border-bottom:2px solid var(--line);padding:6px 8px}
+table.opts td{border-bottom:1px solid var(--line);padding:8px;vertical-align:top}
+table.opts tr.kept td:first-child{font-weight:750;color:var(--key)}
+table.opts tr.kept td:first-child::before{content:"✓ ";color:var(--ok)}
+.descent-body > p{margin:12px 0 0;font-size:16px;line-height:1.45}
+.descent-body a{color:var(--key);font-weight:700}
+
+/* ---------- Insert: ELI-Tech ---------- */
+details.tech{margin-top:12px;border:1px dashed var(--muted);border-radius:12px;background:var(--soft)}
+details.tech > summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:9px 12px;font-size:15px;font-weight:650}
+details.tech > summary::-webkit-details-marker{display:none}
+details.tech > summary:focus-visible{outline:3px solid var(--muted);outline-offset:2px}
+.tech-body{padding:0 12px 12px}
+.tech-body pre{margin:0;overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:14px;line-height:1.5}
+.tech-body p{margin:8px 0 0;font-size:15px;line-height:1.45}
+
+/* Stacked layout: tablets and phones */
+@media (max-width:1059px){
+  main{padding:28px 16px 36px;max-width:600px}
+  .brand{font-size:40px}
+  .tag{font-size:23px}
+  .sub{font-size:18px}
+  header{margin-bottom:40px}
+  .loop{grid-template-columns:minmax(0,1fr);grid-template-rows:none;padding-left:30px}
+  .step{grid-area:auto;display:flex;flex-direction:column;gap:16px}
+  .vis{align-self:stretch}
+  .next{grid-area:auto;height:50px;padding-bottom:8px}
+  .next svg{transform:rotate(90deg)}
+  .ret-path{grid-area:auto;position:absolute;left:4px;top:50px;bottom:46px;width:26px;height:auto}
+  .u{inset:0;height:auto;border:3px solid var(--sys);border-right:0;border-radius:18px 0 0 18px}
+  .u::after{left:auto;right:-2px;top:-9.5px;border:0;border-top:8px solid transparent;border-bottom:8px solid transparent;
+    border-left:14px solid var(--sys)}
+  .u::before{right:-6px;top:auto;bottom:-7px}
+  .ret{grid-area:auto;justify-self:stretch;top:auto;transform:none;max-width:none;padding-top:40px}
+  .ret::before{content:"";position:absolute;left:50%;top:4px;height:22px;border-left:3px solid var(--sys);transform:translateX(-1.5px)}
+  .ret::after{content:"";position:absolute;left:50%;top:22px;transform:translateX(-8px);
+    border-left:8px solid transparent;border-right:8px solid transparent;border-top:12px solid var(--sys)}
+  .ret-label{align-items:flex-start;padding:16px 14px 12px}
+  .proof{margin-top:28px}
+  .proof ul{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:680px){
+  .box{padding:0 16px 18px}
+  .box-head{gap:12px;padding:16px 0 12px}
+  .bn{width:40px;height:40px;font-size:20px}
+  .box-head h2{font-size:22px}
+  .cols{grid-template-columns:minmax(0,1fr)}
+  .rows li{grid-template-columns:minmax(0,1fr);gap:2px}
+  .chain{flex-direction:column}
+  .chain .to svg{transform:rotate(90deg)}
+  .descent-body{padding:12px}
+  /* The ladder of levels becomes a staircase */
+  .ladder{flex-direction:column;align-items:flex-start;gap:6px}
+  .ladder .step-to{display:none}
+  .ladder .i{margin-left:14px} .ladder .a{margin-left:28px} .ladder .t{margin-left:42px}
+}
+@media (prefers-reduced-motion: reduce){
+  .zoomable,.chev{transition:none}
+  .step:hover,.ret:hover,.proof-in:hover{translate:none}
+}
+</style>
+</head>
+<body>
+<main data-eli="lambda">
+<header>
+  <h1><span class="brand">Subject name</span><span class="tag">What it does for you, in one line.</span></h1>
+  <p class="sub">One sentence that says who does what: <span class="you">you ask</span>, <span class="sys">the system acts</span>, <span class="you">you decide</span>.</p>
+  <ol class="ladder" aria-label="The levels of this page">
+    <li class="l"><b>ELI-lambda</b>this page</li>
+    <li class="step-to" aria-hidden="true"><svg viewBox="0 0 20 20" width="16" height="16"><path d="M4 10h11M11 5l5 5-5 5"/></svg></li>
+    <li class="i"><b>ELI-initiate</b>click an element</li>
+    <li class="step-to" aria-hidden="true"><svg viewBox="0 0 20 20" width="16" height="16"><path d="M4 10h11M11 5l5 5-5 5"/></svg></li>
+    <li class="a"><b>ELI-Architect</b>“Under the hood”, at the bottom of a zoom</li>
+    <li class="step-to" aria-hidden="true"><svg viewBox="0 0 20 20" width="16" height="16"><path d="M4 10h11M11 5l5 5-5 5"/></svg></li>
+    <li class="t"><b>ELI-Tech</b>the ⚙ inserts</li>
+  </ol>
+</header>
+
+<figure aria-label="The subject in four steps; each element opens on its detail">
+  <div class="loop">
+    <div class="step you-s s1 zoomable" data-zoom="z-1" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="z-1"
+         aria-label="Step 1, what you do. Open the detail">
+      <span class="state ok">works</span>
+      <div class="head"><span class="num">1</span><p class="ttl">What you do</p></div>
+      <div class="vis">
+        <svg class="pic" viewBox="0 0 120 80" width="120" height="80" role="img" aria-label="A gesture on an element">
+          <rect x="8" y="10" width="76" height="46" rx="9"/>
+          <path d="M22 26h48M22 40h30"/>
+          <path class="fill" d="M78 42v32l8-7 6 12 6-3-6-12h11z"/>
+        </svg>
+      </div>
+      <p class="leg">One sentence, no jargon: the reader’s first gesture, and what they expect from it.</p>
+    </div>
+
+    <div class="next n1" aria-hidden="true"><svg viewBox="0 0 40 24" width="40" height="24"><path d="M3 12h31M25 4l9 8-9 8"/></svg></div>
+
+    <div class="step sys-s s2 zoomable" data-zoom="z-2" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="z-2"
+         aria-label="Step 2, what the system does. Open the detail">
+      <span class="state ok">works</span>
+      <div class="head"><span class="num">2</span><p class="ttl">What the system does</p></div>
+      <div class="vis">
+        <svg class="pic" viewBox="0 0 120 80" width="120" height="80" role="img" aria-label="The system at work">
+          <circle cx="44" cy="42" r="20"/>
+          <path d="M44 14v8M44 62v8M16 42h8M64 42h8M24 22l6 6M58 56l6 6M24 62l6-6M58 28l6-6"/>
+          <path class="fill" d="M98 10l4 10 10 4-10 4-4 10-4-10-10-4 10-4z"/>
+        </svg>
+        <ul class="chips"><li>Keyword</li><li>Keyword</li><li>Keyword</li></ul>
+      </div>
+      <p class="leg">One sentence: what it does for you, said in your own words.</p>
+    </div>
+
+    <div class="next n2" aria-hidden="true"><svg viewBox="0 0 40 24" width="40" height="24"><path d="M3 12h31M25 4l9 8-9 8"/></svg></div>
+
+    <div class="step key-s s3 zoomable" data-zoom="z-3" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="z-3"
+         aria-label="Step 3, the key moment. Open the detail">
+      <span class="state ok">works</span>
+      <div class="head"><span class="num">3</span><p class="ttl">The key moment</p></div>
+      <div class="vis">
+        <svg class="pic" viewBox="0 0 120 48" width="120" height="48" role="img" aria-label="Compare two states">
+          <circle cx="34" cy="24" r="16"/><circle cx="86" cy="24" r="16"/>
+          <path d="M52 18h16M64 13l5 5-5 5M68 30H52M56 25l-5 5 5 5"/>
+        </svg>
+        <div class="switch"><span>Before</span><span class="on">After</span></div>
+      </div>
+      <p class="leg">One sentence: what makes the idea convenient, the gesture people remember.</p>
+    </div>
+
+    <div class="next n3" aria-hidden="true"><svg viewBox="0 0 40 24" width="40" height="24"><path d="M3 12h31M25 4l9 8-9 8"/></svg></div>
+
+    <div class="step you-s s4 zoomable" data-zoom="z-4" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="z-4"
+         aria-label="Step 4, what you decide. Open the detail">
+      <span class="state wip">in progress</span>
+      <div class="head"><span class="num">4</span><p class="ttl">What you decide</p></div>
+      <div class="vis">
+        <svg class="pic" viewBox="0 0 120 56" width="120" height="56" role="img" aria-label="Keep or undo">
+          <circle cx="34" cy="28" r="20"/><path d="M25 29l6 6 12-13"/>
+          <circle cx="86" cy="28" r="20"/><path d="M79 21l14 14M93 21 79 35"/>
+        </svg>
+        <div class="btns"><span class="btn main">Keep</span><span class="btn alt">Undo</span></div>
+      </div>
+      <p class="leg"><b>Keep</b>: what happens. <b>Undo</b>: what goes back as it was.</p>
+    </div>
+
+    <!-- The loop: remove .ret-path and .ret when the subject is not a loop. -->
+    <div class="ret-path" aria-hidden="true"><i class="u"></i></div>
+    <div class="ret zoomable" data-zoom="z-loop" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="z-loop"
+         aria-label="The loop: what it brings. In progress. Open the detail">
+      <p class="ret-label">
+        <span class="state wip">in progress</span>
+        <svg viewBox="0 0 24 24" width="34" height="34" aria-hidden="true"><path d="M20 12a8 8 0 0 1-14.2 5M4 12a8 8 0 0 1 14.2-5M18.5 2.5V7H14M5.5 21.5V17H10"/></svg>
+        <span><b>What the loop brings, in one sentence.</b> Each round makes the next one faster, or more accurate.</span>
+      </p>
+    </div>
+  </div>
+
+  <div class="proof">
+    <div class="proof-in zoomable" data-zoom="z-done" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="z-done"
+         aria-label="What is done. Open the detail">
+      <p class="proof-head"><strong>Done this week</strong><span class="state ok">done</span></p>
+      <ul>
+        <li><svg class="tick" viewBox="0 0 22 22" width="22" height="22" aria-hidden="true"><circle cx="11" cy="11" r="10"/><path d="M6.5 11.5l3 3 6-6.5"/></svg>A concrete result, in one line</li>
+        <li><svg class="tick" viewBox="0 0 22 22" width="22" height="22" aria-hidden="true"><circle cx="11" cy="11" r="10"/><path d="M6.5 11.5l3 3 6-6.5"/></svg>A second one, that can be seen</li>
+        <li><svg class="tick" viewBox="0 0 22 22" width="22" height="22" aria-hidden="true"><circle cx="11" cy="11" r="10"/><path d="M6.5 11.5l3 3 6-6.5"/></svg>A third one, with its effect</li>
+        <li><svg class="tick" viewBox="0 0 22 22" width="22" height="22" aria-hidden="true"><circle cx="11" cy="11" r="10"/><path d="M6.5 11.5l3 3 6-6.5"/></svg>A fourth one, if there is one</li>
+      </ul>
+    </div>
+  </div>
+</figure>
+</main>
+
+<!-- ============ Zooms: ELI-initiate, one notch of detail each, and a descent to ELI-Architect ============ -->
+
+<dialog id="z-1" class="zoom you-s" data-eli="initiate" aria-labelledby="z-1-t">
+  <div class="box">
+    <div class="box-head">
+      <span class="bn" aria-hidden="true">1</span>
+      <div class="ttl-wrap"><span class="lvl i">ELI-initiate</span><h2 id="z-1-t">What you do</h2></div>
+      <button type="button" class="x" aria-label="Close"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    </div>
+    <p class="lead">One sentence: what this zoom adds to the step. <b>The point to remember, in bold.</b></p>
+    <ol class="chain" aria-label="The mechanism in three beats">
+      <li><b>You do</b>the gesture, seen from your side</li>
+      <li class="to" aria-hidden="true"><svg viewBox="0 0 28 20" width="28" height="20"><path d="M3 10h20M16 4l7 6-7 6"/></svg></li>
+      <li><b>What makes it possible</b>the mechanism, in plain words</li>
+      <li class="to" aria-hidden="true"><svg viewBox="0 0 28 20" width="28" height="20"><path d="M3 10h20M16 4l7 6-7 6"/></svg></li>
+      <li><b>What you get</b>the visible result</li>
+    </ol>
+    <ul class="rows">
+      <li><span class="lab">Where</span><span>The place where it happens, as the reader sees it.</span></li>
+      <li><span class="lab">How</span><span>The mechanism that makes the step possible, each new word defined where it first appears.</span></li>
+      <li><span class="lab">Why it is convenient</span><span>What this mechanism spares the reader.</span></li>
+    </ul>
+    <div class="cols">
+      <div class="col ok">
+        <p class="col-h"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg>What works</p>
+        <ul class="list"><li>A case that works today</li><li>Another one, checked</li></ul>
+      </div>
+      <div class="col nt">
+        <p class="col-h"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 7.5V12l3 2"/></svg>Not yet</p>
+        <ul class="list"><li>What is missing, said plainly</li></ul>
+      </div>
+    </div>
+    <p class="box-state"><span class="state ok">works</span><span>A detail on the state, if it matters.</span></p>
+
+    <details class="descent" data-eli="architect" id="a-1">
+      <summary><span class="lvl a">ELI-Architect</span><span class="sum-t">Under the hood: how it is built</span><svg class="chev" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg></summary>
+      <div class="descent-body">
+        <p class="lead">The solution in one sentence: which component does what, and the constraint that decides.</p>
+        <div class="arch">
+          <svg class="arch-svg" viewBox="0 0 320 280" role="img" aria-label="Component A calls component B, which writes to the store">
+            <defs><marker id="arr-1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1 1l8 4-8 4" fill="none" stroke="currentColor" stroke-width="2" class="edge"/></marker></defs>
+            <rect class="node" x="20" y="8" width="220" height="62" rx="12"/>
+            <text class="t1" x="36" y="35">Component A</text><text class="t2" x="36" y="57">what it does, in 4 words</text>
+            <path class="edge" d="M130 72v34" marker-end="url(#arr-1)"/>
+            <text class="lbl" x="142" y="95">1 · calls</text>
+            <rect class="node" x="20" y="110" width="220" height="62" rx="12"/>
+            <text class="t1" x="36" y="137">Component B</text><text class="t2" x="36" y="159">what it does, in 4 words</text>
+            <path class="edge" d="M130 174v34" marker-end="url(#arr-1)"/>
+            <text class="lbl" x="142" y="197">2 · writes</text>
+            <rect class="node store" x="20" y="212" width="220" height="62" rx="12"/>
+            <text class="t1" x="36" y="239">Store</text><text class="t2" x="36" y="261">what it keeps</text>
+          </svg>
+          <div class="target"><span class="target-n">&lt; 0.5 s</span><span class="target-l">the number that constrains the solution</span></div>
+        </div>
+        <table class="opts">
+          <thead><tr><th>Option</th><th>What it gains</th><th>What it costs</th></tr></thead>
+          <tbody>
+            <tr class="kept"><td>Chosen option</td><td>The gain that decides</td><td>The price accepted</td></tr>
+            <tr><td>Rejected option</td><td>What it would have brought</td><td>Why it loses</td></tr>
+          </tbody>
+        </table>
+        <p>A precise point, if needed: <a href="#t-1">how A calls B ⚙</a></p>
+        <details class="tech" data-eli="tech" id="t-1">
+          <summary><span class="lvl t">ELI-Tech</span><span class="sum-t">⚙ How A calls B</span></summary>
+          <div class="tech-body">
+            <pre><code>path/to/file.py:42   def function(argument) -&gt; result</code></pre>
+            <p>What this code does, in one sentence, and the edge case it covers.</p>
+          </div>
+        </details>
+      </div>
+    </details>
+  </div>
+</dialog>
+
+<dialog id="z-2" class="zoom sys-s" data-eli="initiate" aria-labelledby="z-2-t">
+  <div class="box">
+    <div class="box-head">
+      <span class="bn" aria-hidden="true">2</span>
+      <div class="ttl-wrap"><span class="lvl i">ELI-initiate</span><h2 id="z-2-t">What the system does</h2></div>
+      <button type="button" class="x" aria-label="Close"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    </div>
+    <p class="lead">What it can do alone, what it cannot yet. <b>The limit that matters, in bold.</b></p>
+    <ol class="chain" aria-label="What the system chains together">
+      <li><b>It reads</b>what it starts from</li>
+      <li class="to" aria-hidden="true"><svg viewBox="0 0 28 20" width="28" height="20"><path d="M3 10h20M16 4l7 6-7 6"/></svg></li>
+      <li><b>It chooses</b>what knowledge it relies on</li>
+      <li class="to" aria-hidden="true"><svg viewBox="0 0 28 20" width="28" height="20"><path d="M3 10h20M16 4l7 6-7 6"/></svg></li>
+      <li><b>It prepares</b>without imposing anything yet</li>
+    </ol>
+    <div class="cols">
+      <div class="col ok">
+        <p class="col-h"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg>It can</p>
+        <ul class="list"><li>An ability, told by its effect</li><li>Another one</li></ul>
+      </div>
+      <div class="col nt">
+        <p class="col-h"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 7.5V12l3 2"/></svg>Not yet</p>
+        <ul class="list"><li>What it leaves to you, and why</li></ul>
+      </div>
+    </div>
+    <p class="box-state"><span class="state ok">works</span><span>but a reservation with a number, if there is one.</span></p>
+
+    <details class="descent" data-eli="architect" id="a-2">
+      <summary><span class="lvl a">ELI-Architect</span><span class="sum-t">Under the hood: how it is built</span><svg class="chev" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg></summary>
+      <div class="descent-body">
+        <p class="lead">The components that carry this step, and the choice that shaped them.</p>
+        <div class="arch">
+          <svg class="arch-svg" viewBox="0 0 320 280" role="img" aria-label="Input read by the engine, which looks up a catalogue">
+            <defs><marker id="arr-2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1 1l8 4-8 4" fill="none" stroke="currentColor" stroke-width="2" class="edge"/></marker></defs>
+            <rect class="node" x="20" y="8" width="220" height="62" rx="12"/>
+            <text class="t1" x="36" y="35">Input</text><text class="t2" x="36" y="57">what is read, and from where</text>
+            <path class="edge" d="M130 72v34" marker-end="url(#arr-2)"/>
+            <text class="lbl" x="142" y="95">1 · describes</text>
+            <rect class="node" x="20" y="110" width="220" height="62" rx="12"/>
+            <text class="t1" x="36" y="137">Engine</text><text class="t2" x="36" y="159">what it decides</text>
+            <path class="edge" d="M130 174v34" marker-end="url(#arr-2)"/>
+            <text class="lbl" x="142" y="197">2 · looks up</text>
+            <rect class="node store" x="20" y="212" width="220" height="62" rx="12"/>
+            <text class="t1" x="36" y="239">Catalogue</text><text class="t2" x="36" y="261">the knowledge reused</text>
+          </svg>
+          <div class="target"><span class="target-n">1 min</span><span class="target-l">today, per request: the number to bring down</span></div>
+        </div>
+        <table class="opts">
+          <thead><tr><th>Option</th><th>What it gains</th><th>What it costs</th></tr></thead>
+          <tbody>
+            <tr class="kept"><td>Chosen option</td><td>The gain that decides</td><td>The price accepted</td></tr>
+            <tr><td>Rejected option</td><td>What it would have brought</td><td>Why it loses</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </details>
+  </div>
+</dialog>
+
+<dialog id="z-3" class="zoom key-s" data-eli="initiate" aria-labelledby="z-3-t">
+  <div class="box">
+    <div class="box-head">
+      <span class="bn" aria-hidden="true">3</span>
+      <div class="ttl-wrap"><span class="lvl i">ELI-initiate</span><h2 id="z-3-t">The key moment</h2></div>
+      <button type="button" class="x" aria-label="Close"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    </div>
+    <p class="lead">The gesture people remember, and what makes it safe. <b>Nothing changes until you decide.</b></p>
+    <ol class="chain" aria-label="Before, one gesture, after">
+      <li><b>At first</b>the original state</li>
+      <li class="to" aria-hidden="true"><svg viewBox="0 0 28 20" width="28" height="20"><path d="M3 10h20M16 4l7 6-7 6"/></svg></li>
+      <li><b>One gesture</b>the only one to remember</li>
+      <li class="to" aria-hidden="true"><svg viewBox="0 0 28 20" width="28" height="20"><path d="M3 10h20M16 4l7 6-7 6"/></svg></li>
+      <li><b>Then</b>the new state, reversible</li>
+    </ol>
+    <p class="box-state"><span class="state ok">works</span></p>
+
+    <details class="descent" data-eli="architect" id="a-3">
+      <summary><span class="lvl a">ELI-Architect</span><span class="sum-t">Under the hood: what makes the gesture instant</span><svg class="chev" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg></summary>
+      <div class="descent-body">
+        <p class="lead">The principle in one sentence, and the number it holds.</p>
+        <div class="arch">
+          <div class="target"><span class="target-n">&lt; 0.5 s</span><span class="target-l">between the gesture and the effect</span></div>
+        </div>
+        <table class="opts">
+          <thead><tr><th>Option</th><th>What it gains</th><th>What it costs</th></tr></thead>
+          <tbody>
+            <tr class="kept"><td>Chosen option</td><td>The gain that decides</td><td>The price accepted</td></tr>
+            <tr><td>Rejected option</td><td>What it would have brought</td><td>Why it loses</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </details>
+  </div>
+</dialog>
+
+<dialog id="z-4" class="zoom you-s" data-eli="initiate" aria-labelledby="z-4-t">
+  <div class="box">
+    <div class="box-head">
+      <span class="bn" aria-hidden="true">4</span>
+      <div class="ttl-wrap"><span class="lvl i">ELI-initiate</span><h2 id="z-4-t">What you decide</h2></div>
+      <button type="button" class="x" aria-label="Close"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    </div>
+    <p class="lead">The possible outcomes, and what each one leaves behind.</p>
+    <table class="opts">
+      <thead><tr><th>You choose</th><th>What happens</th></tr></thead>
+      <tbody>
+        <tr><td>Keep</td><td>What stays, and where.</td></tr>
+        <tr><td>Undo</td><td>What goes back exactly as it was.</td></tr>
+        <tr><td>Correct</td><td>One sentence is enough: what is redone, and how.</td></tr>
+      </tbody>
+    </table>
+    <p class="box-state"><span class="state wip">in progress</span><span>What is missing for the step to be finished.</span></p>
+
+    <details class="descent" data-eli="architect" id="a-4">
+      <summary><span class="lvl a">ELI-Architect</span><span class="sum-t">Under the hood: how undo stays exact</span><svg class="chev" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg></summary>
+      <div class="descent-body">
+        <p class="lead">What is remembered before acting, and by whom.</p>
+        <p>One or two sentences on the design choice and its trade-off; a diagram as soon as there are more than two components.</p>
+      </div>
+    </details>
+  </div>
+</dialog>
+
+<dialog id="z-loop" class="zoom sys-s" data-eli="initiate" aria-labelledby="z-loop-t">
+  <div class="box">
+    <div class="box-head">
+      <span class="bn" aria-hidden="true"><svg viewBox="0 0 24 24" width="24" height="24"><path d="M20 12a8 8 0 0 1-14.2 5M4 12a8 8 0 0 1 14.2-5M18.5 2.5V7H14M5.5 21.5V17H10"/></svg></span>
+      <div class="ttl-wrap"><span class="lvl i">ELI-initiate</span><h2 id="z-loop-t">What the loop brings</h2></div>
+      <button type="button" class="x" aria-label="Close"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    </div>
+    <p class="lead">How each round feeds the next. <b>What is still done by hand, said plainly.</b></p>
+    <div class="cols">
+      <div class="col ok">
+        <p class="col-h"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg>Already done</p>
+        <ul class="list"><li>What is kept at each round</li><li>What it already gives</li></ul>
+      </div>
+      <div class="col nt">
+        <p class="col-h"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 7.5V12l3 2"/></svg>Left to do</p>
+        <ul class="list"><li>The next step, and what it changes</li></ul>
+      </div>
+    </div>
+    <p class="box-state"><span class="state wip">in progress</span></p>
+
+    <details class="descent" data-eli="architect" id="a-loop">
+      <summary><span class="lvl a">ELI-Architect</span><span class="sum-t">Under the hood: where what the loop keeps lives</span><svg class="chev" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg></summary>
+      <div class="descent-body">
+        <p class="lead">The trace left at each round, who reads it, and what becomes of it.</p>
+        <p>One or two sentences on the format and its trade-off; a diagram as soon as there are more than two components.</p>
+      </div>
+    </details>
+  </div>
+</dialog>
+
+<dialog id="z-done" class="zoom ok-s" data-eli="initiate" aria-labelledby="z-done-t">
+  <div class="box">
+    <div class="box-head">
+      <span class="bn" aria-hidden="true"><svg viewBox="0 0 24 24" width="24" height="24"><path d="M5 12.5l4.5 4.5L19 7"/></svg></span>
+      <div class="ttl-wrap"><span class="lvl i">ELI-initiate</span><h2 id="z-done-t">Done this week</h2></div>
+      <button type="button" class="x" aria-label="Close"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    </div>
+    <ul class="done">
+      <li><svg class="tick" viewBox="0 0 22 22" width="22" height="22" aria-hidden="true"><circle cx="11" cy="11" r="10"/><path d="M6.5 11.5l3 3 6-6.5"/></svg><span><b>A concrete result</b>, and what it changes for the reader.</span></li>
+      <li><svg class="tick" viewBox="0 0 22 22" width="22" height="22" aria-hidden="true"><circle cx="11" cy="11" r="10"/><path d="M6.5 11.5l3 3 6-6.5"/></svg><span><b>A second one</b>, with the proof that can be seen.</span></li>
+    </ul>
+    <p class="box-state"><span class="state ok">done</span></p>
+
+    <details class="descent" data-eli="architect" id="a-done">
+      <summary><span class="lvl a">ELI-Architect</span><span class="sum-t">Under the hood: what changed in the build</span><svg class="chev" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg></summary>
+      <div class="descent-body">
+        <p class="lead">The components touched this week, and why.</p>
+        <p>One line per component: what moved, and the measurement that proves it.</p>
+      </div>
+    </details>
+  </div>
+</dialog>
+
+<script>
+(function () {
+  "use strict";
+  var reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+  var triggerOf = new Map();
+  var OPEN_MS = 340, CLOSE_MS = 220;
+
+  function supportsAnimate(el) { return typeof el.animate === "function"; }
+
+  // Morph the box from (or back to) the rectangle of the element that opened it.
+  function morph(el, from, backwards) {
+    var to = el.getBoundingClientRect();
+    if (!from || !from.width || !to.width || !supportsAnimate(el)) return null;
+    var dx = (from.left + from.width / 2) - (to.left + to.width / 2);
+    var dy = (from.top + from.height / 2) - (to.top + to.height / 2);
+    var sx = from.width / to.width, sy = from.height / to.height;
+    var small = { transform: "translate(" + dx + "px," + dy + "px) scale(" + sx + "," + sy + ")", opacity: 0.25 };
+    var full = { transform: "none", opacity: 1 };
+    return el.animate(backwards ? [full, small] : [small, full], {
+      duration: backwards ? CLOSE_MS : OPEN_MS,
+      easing: backwards ? "cubic-bezier(.4,0,1,1)" : "cubic-bezier(.2,.8,.2,1)",
+      fill: backwards ? "forwards" : "none"
+    });
+  }
+
+  function fadeBackdrop(dlg, show) {
+    if (!supportsAnimate(dlg)) return;
+    dlg.animate({ opacity: show ? [0, 1] : [1, 0] },
+      { duration: show ? OPEN_MS : CLOSE_MS, fill: show ? "none" : "forwards" });
+  }
+
+  // show(), never showModal(): see the CSS note on dialog.zoom (docpin's note bubble).
+  function openDialog(dlg, trigger) {
+    if (!dlg || dlg.open) return;
+    if (trigger) triggerOf.set(dlg, trigger);
+    dlg.show();
+    var box = dlg.querySelector(".box");
+    if (box) box.scrollTop = 0;
+    var x = dlg.querySelector(".x");
+    if (x) x.focus({ preventScroll: true });
+    if (reduce.matches || !trigger) {
+      if (supportsAnimate(dlg)) dlg.animate({ opacity: [0, 1] }, { duration: 120 });
+      return;
+    }
+    morph(box || dlg, trigger.getBoundingClientRect(), false);
+    fadeBackdrop(dlg, true);
+  }
+
+  function closeBox(dlg) {
+    if (!dlg.open || dlg.hasAttribute("data-closing")) return;
+    var trigger = triggerOf.get(dlg);
+    if (reduce.matches || !trigger) { dlg.close(); return; }
+    dlg.setAttribute("data-closing", "");
+    var anim = morph(dlg.querySelector(".box") || dlg, trigger.getBoundingClientRect(), true);
+    fadeBackdrop(dlg, false);
+    var finish = function () { if (dlg.open && dlg.hasAttribute("data-closing")) dlg.close(); };
+    if (anim) { anim.onfinish = finish; anim.oncancel = finish; }
+    // Safety net: a page that is not painting (background tab) never finishes the animation.
+    window.setTimeout(finish, CLOSE_MS + 200);
+    if (!anim) finish();
+  }
+
+  // A link to any level: #z-… opens a zoom, #a-… or #t-… also opens the descent that holds it.
+  function openFromHash() {
+    var id = decodeURIComponent(location.hash.slice(1));
+    var target = id && document.getElementById(id);
+    if (!target) return;
+    var dlg = target.closest("dialog.zoom");
+    if (!dlg) return;
+    for (var n = target; n && n !== dlg; n = n.parentElement) {
+      if (n.tagName === "DETAILS") n.open = true;
+    }
+    openDialog(dlg, document.querySelector('[data-zoom="' + dlg.id + '"]'));
+    if (target !== dlg) target.scrollIntoView({ block: "start" });
+  }
+
+  document.querySelectorAll("[data-zoom]").forEach(function (el) {
+    var dlg = document.getElementById(el.getAttribute("data-zoom"));
+    el.addEventListener("click", function () { openDialog(dlg, el); });
+    el.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") { e.preventDefault(); openDialog(dlg, el); }
+    });
+  });
+
+  document.querySelectorAll("dialog.zoom").forEach(function (dlg) {
+    var downOnBackdrop = false;
+    dlg.addEventListener("pointerdown", function (e) { downOnBackdrop = (e.target === dlg); });
+    dlg.addEventListener("click", function (e) {
+      if (e.target === dlg && downOnBackdrop) closeBox(dlg);
+      downOnBackdrop = false;
+    });
+    dlg.querySelector(".x").addEventListener("click", function () { closeBox(dlg); });
+    dlg.addEventListener("cancel", function (e) { e.preventDefault(); closeBox(dlg); });
+    dlg.addEventListener("keydown", function (e) { if (e.key === "Escape") closeBox(dlg); });
+    dlg.addEventListener("close", function () {
+      dlg.removeAttribute("data-closing");
+      if (dlg.getAnimations) dlg.getAnimations({ subtree: true }).forEach(function (a) { a.cancel(); });
+      // Forget a link into this zoom, so that following it again reopens it.
+      var aimed = document.getElementById(decodeURIComponent(location.hash.slice(1)));
+      if (aimed && dlg.contains(aimed) && history.replaceState) {
+        history.replaceState(null, "", location.pathname + location.search);
+      }
+      var trigger = triggerOf.get(dlg);
+      triggerOf.delete(dlg);
+      if (trigger) trigger.focus({ preventScroll: true });
+    });
+  });
+
+  window.addEventListener("hashchange", openFromHash);
+  openFromHash();
+})();
+</script>
+</body>
+</html>

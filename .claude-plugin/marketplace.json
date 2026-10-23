@@ -1,0 +1,12 @@
+{
+  "name": "eli",
+  "description": "eli: Claude explains by levels, from plain words to code, one level at a time",
+  "owner": {"name": "elphono", "url": "https://github.com/elphono"},
+  "plugins": [
+    {
+      "name": "eli",
+      "source": "./",
+      "description": "An output style that explains by levels, a template for documents that zoom from plain words to code, and a check that documents carry their levels"
+    }
+  ]
+}
