@@ -13,6 +13,7 @@ obtain.
 | a Markdown deliverable                                           | block: a document is a self-contained HTML page |
 | an HTML page without any visual (svg, img, canvas, table)        | block |
 | no `data-eli="lambda"` surface or no `data-eli="initiate"` zoom  | warning |
+| no TL;DR: no element carrying `data-tldr`                         | warning |
 | a script, stylesheet or image loaded from the network            | warning: not self-contained |
 | more than PROSE_PER_VISUAL paragraphs per visual                 | warning |
 | a local image over 1 MB that git does not track yet              | warning |
@@ -78,26 +79,37 @@ EXEMPT = ("If the form is justified (a transcript, raw data), put "
           "<!-- eli: exemption — reason --> in its first five lines")
 
 
-class _Levels(HTMLParser):
-    """Collects the values of every `data-eli` attribute. A self-closing tag
-    (`<img data-eli="…" />`) reaches handle_starttag through HTMLParser's own
-    handle_startendtag."""
+class _Markers(HTMLParser):
+    """Collects the values of every `data-eli` attribute, and whether a `data-tldr`
+    attribute is there. A self-closing tag (`<img data-eli="…" />`) reaches
+    handle_starttag through HTMLParser's own handle_startendtag."""
 
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
         self.found: set[str] = set()
+        self.tldr = False
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         for name, value in attrs:
             if name == "data-eli" and value:
                 self.found.update(value.lower().split())
+            elif name == "data-tldr":
+                self.tldr = True
+
+
+def _markers(text: str) -> _Markers:
+    parser = _Markers()
+    parser.feed(text)
+    parser.close()
+    return parser
 
 
 def levels(text: str) -> set[str]:
-    parser = _Levels()
-    parser.feed(text)
-    parser.close()
-    return parser.found
+    return _markers(text).found
+
+
+def has_tldr(text: str) -> bool:
+    return _markers(text).tldr
 
 
 def exemption(text: str) -> str | None:
@@ -160,6 +172,10 @@ def verdict(path: Path, text: str) -> tuple[str, str]:
     unmarked = missing_levels(text)
     if unmarked:
         reasons.append(unmarked)
+    if not has_tldr(text):
+        reasons.append("no TL;DR (an element with data-tldr): open the surface on one to three "
+                       "sentences that are enough by themselves, each decision with its "
+                       "problem, its recommendation and what applies without an answer")
     external = list(dict.fromkeys(_EXTERNAL.findall(text)))
     if external:
         shown = ", ".join(external[:3]) + (" ..." if len(external) > 3 else "")

@@ -58,6 +58,31 @@ A level named by hand stays in force until the subject changes; a new subject st
 the table. When torn between two levels, take the higher one: going down costs the user one
 word, climbing out of a technical wall costs them a second reading.
 
+## The TL;DR comes first, and stands on its own
+
+A reply that explains, reports or asks for a decision opens with a **TL;DR**: one to three
+whole sentences that are enough by themselves. Whoever reads only them knows what happened and
+what is expected of them; the diagram, the table and the level line below are there to check
+it, not to complete it.
+
+| The reply | Its TL;DR says |
+|---|---|
+| a report: work done, a measure, a finding | what was done, the result, what is left |
+| an explanation | the answer to the question asked, in plain words |
+| a decision to take | for **each** decision: the problem it settles, the recommendation, the other option, and what happens without an answer |
+
+- **A decision is stated with its problem, in whole sentences**: never "choice 3: liveness?",
+  but "once the helper containers are gone, nothing shows a service is healthy; I recommend
+  reading it from the monitoring that already polls them, rather than a probe in each
+  container". A choice is named by its content, never by a number or a word defined further
+  down.
+- **Say what applies without an answer** — usually the recommendation — so that silence is a
+  decision too, and the user only writes back to disagree.
+- In the terminal it is a first line `**TL;DR** — …`; it counts within the length limit. It
+  does not replace the "TO DO" block: the actions still end the reply.
+- A factual reply has none: its one line already is one. A short reply (under ten lines) needs
+  no label, but its first sentence plays the part.
+
 ## What each level shows
 
 **ELI-lambda means a diagram as soon as a new idea has to come in** — a mechanism, a flow, a
@@ -126,12 +151,21 @@ messages, hand-over notes and work plans.
   was just shown, a conclusion that repeats the table above. Never cut the words that carry
   the meaning: a telegraphic style makes the reader guess, which costs more than the words
   saved. A table row or a diagram label must read on its own.
+- **Technical words as the code says them.** Writing in another language than English, keep
+  the English term the code, the tools and the developers' daily speech use — `logging`, not
+  its translation; `build`, `commit`, `merge`, `timeout`, `healthcheck`, `sidecar` — and
+  translate only where the translation is the word people actually say. A translated term
+  sends the reader translating it back to find it in the code, the logs or a search engine.
+  This is not licence for jargon: at ELI-lambda, a technical word stays out when the idea does
+  without it; when it is needed, it comes in the form the code gives it.
 - **Jargon is paid for on the spot.** A term of the project — a concept name, an abbreviation —
   is explained in a few words the first time it appears in a conversation, or not used.
 - **No opaque reference.** A ticket number, an id, a commit, a path: give its meaning in place,
   in two or three words — `#4 (tablet cleanup)`, not `#4`.
 - **A question is a comparison too**: the options go in a table or a sketch, not one paragraph
-  each; what sets them apart must show without a second reading.
+  each; what sets them apart must show without a second reading. The first column states the
+  choice **and the problem it settles**, in a whole sentence; the recommended option comes
+  first; the table says what applies without an answer.
 - **Symbols have a fixed meaning**; outside this table, a symbol comes with its legend or not
   at all.
 
@@ -189,10 +223,13 @@ A reply in the terminal fits in **30 lines outside code blocks**; an ELI-lambda 
 ## Self-check — before delivering, never after
 
 1. Which level, from the table? Does the reply hold to it from end to end?
-2. Does a new idea come in? Then a diagram, before the prose.
-3. Under the length limit?
-4. Is the level line there, if the reply explains something?
-5. For a document: the checks of the `eli:documents` skill, and first, have you **looked at it
+2. Read the TL;DR alone: does it say what happened, and each decision with its problem, its
+   recommendation and what applies without an answer?
+3. Does a new idea come in? Then a diagram, before the prose.
+4. Under the length limit?
+5. Is the level line there, if the reply explains something?
+6. A technical word translated where the code says it in English? Put the code's word back.
+7. For a document: the checks of the `eli:documents` skill, and first, have you **looked at it
    rendered**?
 
 If not, rework it **before** sending.

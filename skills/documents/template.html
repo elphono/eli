@@ -53,6 +53,11 @@ h1{margin:0;line-height:1.05}
 .brand{display:block;font-size:56px;font-weight:800;letter-spacing:-.025em}
 .tag{display:block;font-size:28px;font-weight:650;color:var(--sys);margin-top:8px;letter-spacing:-.01em}
 .sub{font-size:20px;margin:16px 0 0;color:var(--muted)}
+/* The TL;DR: the sentences that are enough by themselves */
+.tldr{margin:22px 0 0;max-width:80ch;padding:14px 18px;border-radius:12px;background:var(--card);
+  border:1px solid var(--line);border-left:6px solid var(--sys);font-size:18px}
+.tldr-k{display:inline-block;font-size:13px;font-weight:800;letter-spacing:.06em;color:var(--sys);margin-bottom:4px}
+.tldr p{margin:4px 0 0}
 .you{color:var(--you);font-weight:700}
 .sys{color:var(--sys);font-weight:700}
 
@@ -315,6 +320,11 @@ details.tech > summary:focus-visible{outline:3px solid var(--muted);outline-offs
 <header>
   <h1><span class="brand">Subject name</span><span class="tag">What it does for you, in one line.</span></h1>
   <p class="sub">One sentence that says who does what: <span class="you">you ask</span>, <span class="sys">the system acts</span>, <span class="you">you decide</span>.</p>
+  <section class="tldr" data-tldr aria-label="TL;DR">
+    <span class="tldr-k">TL;DR</span>
+    <p>One to three whole sentences that are enough by themselves: what was done or found, the result, what is left.</p>
+    <p>For each decision to take: the problem it settles, the recommendation, the other option, and what applies without an answer.</p>
+  </section>
   <ol class="ladder" aria-label="The levels of this page">
     <li class="l"><b>ELI-lambda</b>this page</li>
     <li class="step-to" aria-hidden="true"><svg viewBox="0 0 20 20" width="16" height="16"><path d="M4 10h11M11 5l5 5-5 5"/></svg></li>

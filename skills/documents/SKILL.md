@@ -14,7 +14,7 @@ for and answer notes: follow both.
 
 ```
 surface ── ELI-lambda
-  promise title · one sentence · 3 to 5 illustrated elements (steps, loop, "done" strip)
+  promise title · one sentence · TL;DR · 3 to 5 illustrated elements (steps, loop, "done" strip)
     │ click on an element
     ▼
 zoom ── ELI-initiate
@@ -67,10 +67,29 @@ meets going up, which keeps the note in place when the document changes.
 
 | Floor | Holds | Does not hold |
 |---|---|---|
-| ELI-lambda surface | the promise; one "who does what" sentence; each step = a title, a visual, a sentence with no jargon; the state ("works", "in progress") | mechanism, component name, technical number |
+| ELI-lambda surface | the promise; one "who does what" sentence; the TL;DR; each step = a title, a visual, a sentence with no jargon; the state ("works", "in progress") | mechanism, component name, technical number |
 | ELI-initiate zoom | the mechanism as a chain or a diagram; "what works / not yet"; each new word defined | format, protocol, file name |
 | ELI-Architect descent | a diagram of the components and their flows; the number that constrains; a table of options and the trade-off | code, function names |
 | ELI-Tech insert | path, signature, command, short excerpt; the edge case | a lecture |
+
+## The TL;DR, and the decisions
+
+The surface opens on a **TL;DR** (`data-tldr`): one to three whole sentences that are enough by
+themselves, written last, once the rest is known. Whoever stops there knows what the document
+found and what is expected of them. A document that asks for decisions says, in the TL;DR, how
+many there are and what applies without an answer; each one is then stated in a table that also
+reads on its own:
+
+| Column | Holds |
+|---|---|
+| the choice, and the problem it settles | a numbered title, then the problem in whole sentences: what goes wrong today, when, for whom |
+| recommended | the option, in a sentence a newcomer understands |
+| other choice | the alternative, and what it costs |
+| what is checked | how the outcome will show, for each option |
+
+Under the table, one bold sentence says what applies without an answer — usually the
+recommendation. The options' technical spelling (flags, file names) goes down a level, into
+the descent, never in the table the decision is read from.
 
 ## What calls for a picture
 

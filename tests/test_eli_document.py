@@ -25,10 +25,12 @@ HOOK = REPO / "hooks" / "eli-document.py"
 TEMPLATE = REPO / "skills" / "documents" / "template.html"
 
 SVG = '<svg viewBox="0 0 10 10"><rect width="5" height="5"/></svg>'
-BOTH = f'<main data-eli="lambda">{SVG}</main><dialog id="z-1" data-eli="initiate"><p>zoom</p></dialog>'
-ONLY_LAMBDA = f'<main data-eli="lambda">{SVG}</main><dialog id="z-1"><p>zoom</p></dialog>'
-ONLY_INITIATE = f'<main>{SVG}</main><dialog id="z-1" data-eli="initiate"><p>zoom</p></dialog>'
-FLAT = f'<main>{SVG}<p>One flat page.</p></main>'
+# No <p> in it: the paragraph count stays the one each test sets.
+TLDR = '<section data-tldr><b>TL;DR</b> what was found, and what applies without an answer.</section>'
+BOTH = f'<main data-eli="lambda">{TLDR}{SVG}</main><dialog id="z-1" data-eli="initiate"><p>zoom</p></dialog>'
+ONLY_LAMBDA = f'<main data-eli="lambda">{TLDR}{SVG}</main><dialog id="z-1"><p>zoom</p></dialog>'
+ONLY_INITIATE = f'<main>{TLDR}{SVG}</main><dialog id="z-1" data-eli="initiate"><p>zoom</p></dialog>'
+FLAT = f'<main>{TLDR}{SVG}<p>One flat page.</p></main>'
 
 
 def page(body: str, top: list[str] | None = None) -> str:
@@ -114,7 +116,7 @@ def test_one_missing_level_is_named(tmp_path, body, missing):
     '<main data-eli="lambda"><img data-eli="initiate" src="a.png" alt="" /></main>',
 ])
 def test_markers_are_read_as_attributes_whatever_their_spelling(tmp_path, markup):
-    assert run(written(tmp_path, "docs/spelled.html", page(SVG + markup))) is None
+    assert run(written(tmp_path, "docs/spelled.html", page(TLDR + SVG + markup))) is None
 
 
 @pytest.mark.parametrize("markup", [
@@ -125,8 +127,24 @@ def test_markers_are_read_as_attributes_whatever_their_spelling(tmp_path, markup
     '<main data-level="lambda"></main><dialog data-eli-level="initiate"></dialog>',
 ])
 def test_markers_quoted_in_the_text_or_misnamed_mark_nothing(tmp_path, markup):
-    said = run(written(tmp_path, "docs/quoted.html", page(SVG + markup)))
+    said = run(written(tmp_path, "docs/quoted.html", page(TLDR + SVG + markup)))
     assert said is not None and said.startswith("quoted.html: no ELI level is marked.")
+
+
+@pytest.mark.parametrize("markup", ["<div data-tldr></div>", "<P DATA-TLDR=''>x</P>",
+                                    '<section data-tldr="yes">x</section>'])
+def test_a_tldr_is_an_attribute_whatever_its_spelling(tmp_path, markup):
+    body = BOTH.replace(TLDR, markup)
+    assert run(written(tmp_path, "docs/t.html", page(body))) is None
+
+
+@pytest.mark.parametrize("markup", ["", "<p>TL;DR: what was found.</p>",
+                                    "<pre><code>&lt;section data-tldr&gt;</code></pre>",
+                                    "<!-- <section data-tldr> -->", '<div class="tldr">x</div>'])
+def test_a_document_without_a_tldr_warns_and_says_what_it_holds(tmp_path, markup):
+    said = run(written(tmp_path, "docs/t.html", page(BOTH.replace(TLDR, markup))))
+    assert said is not None and said.startswith("t.html: no TL;DR (an element with data-tldr)")
+    assert "what applies without an answer" in said
 
 
 # -- the exemption -------------------------------------------------------------
@@ -277,7 +295,7 @@ def test_an_html_page_without_a_visual_is_blocked(tmp_path, body):
 @pytest.mark.parametrize("visual", ['<svg viewBox="0 0 1 1"></svg>', '<img src="a.png" alt="">',
                                     "<canvas></canvas>", "<table><tr><td>1</td></tr></table>"])
 def test_each_kind_of_visual_counts(tmp_path, visual):
-    body = f'<main data-eli="lambda">{visual}</main><dialog data-eli="initiate"></dialog>'
+    body = f'<main data-eli="lambda">{TLDR}{visual}</main><dialog data-eli="initiate"></dialog>'
     assert run(written(tmp_path, "docs/v.html", page(body))) is None
 
 
@@ -327,3 +345,7 @@ def test_the_template_written_as_a_document_is_left_alone(tmp_path):
     target.write_text(TEMPLATE.read_text(encoding="utf-8").replace("data-eli=", "data-was="),
                       encoding="utf-8")
     assert run(payload) is not None
+    target.write_text(TEMPLATE.read_text(encoding="utf-8").replace("data-tldr", "data-was"),
+                      encoding="utf-8")
+    said = run(payload)
+    assert said is not None and "no TL;DR" in said

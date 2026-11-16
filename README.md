@@ -33,9 +33,9 @@ to get into, so eli gives Claude and you a shared vocabulary of named levels (EL
 
 | Piece | What it does |
 |---|---|
-| the **eli** output style | the levels, how to pick one, the forms (diagram before prose, tables for comparisons), the level line, and a "TO DO" block that ends a reply with what is left to do |
+| the **eli** output style | the levels, how to pick one, a TL;DR that stands on its own (each decision with its problem, its recommendation and what applies without an answer), technical words kept as the code spells them, the forms (diagram before prose, tables for comparisons), the level line, and a "TO DO" block that ends a reply with what is left to do |
 | the **`eli:documents`** skill | how a document carries the levels, with a ready template: light and dark, phone width, keyboard, links that open a precise level (`#a-2`) |
-| the **eli-document** check | sends the session back to a document it just wrote when it is Markdown or has no visual, and warns when it lacks its levels, loads from the network, or holds too much prose per picture |
+| the **eli-document** check | sends the session back to a document it just wrote when it is Markdown or has no visual, and warns when it lacks its levels or its TL;DR, loads from the network, or holds too much prose per picture |
 
 It pairs well with [docpin](https://github.com/elphono/docpin), which lets you pin notes on the
 documents a session writes and sends them back to it. The template is built to work under
@@ -74,6 +74,7 @@ checked.
 |---|---|
 | Markdown, or an HTML page with no visual (`svg`, `img`, `canvas`, `table`) | **blocked**: the session reworks it before moving on |
 | no ELI-lambda surface or no ELI-initiate zoom (`data-eli` attributes, never the text) | warning |
+| no TL;DR (a `data-tldr` attribute) | warning |
 | loads a script, a stylesheet or an image from the network | warning |
 | more than 4 paragraphs per visual, or a new image over 1 MB | warning |
 
