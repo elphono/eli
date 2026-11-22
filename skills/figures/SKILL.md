@@ -76,13 +76,13 @@ path** (`data-tone`). Both keep the same meaning at every level of a page.
 | `sys` | the system the figure is about |
 | `key` | a second actor, or the slow or costly path |
 | `ok` | an outcome that is good or confirmed |
-| `muted` | the outside the system acts on, background, not yet |
+| `muted` | the outside the system acts on, or an aside (a `note`) |
 
 - **The figure is its own legend**: labels sit on the nodes and the arrows, never in a key box
   apart. A path's colour is named on its answer chip ("Yes: known recipe").
 - **Colour never carries a distinction alone**: the shape, a label or a pictogram says it too.
 - **One colour per role, the same at every level**: a component keeps its colour from ELI-lambda to
-  ELI-Architect, and a label names who acts ("Sidekick poses...", "You...") so the colour is read,
+  ELI-Architect, and a label names who acts ("The tuner listens...", "You...") so the colour is read,
   not guessed. One pictogram per meaning: never the same icon for two things.
 - **ELI-lambda names no component**: it says what the reader lives ("you type", "an AI improvises");
   component names and jargon start at ELI-initiate, defined where they first appear.

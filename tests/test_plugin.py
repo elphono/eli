@@ -7,6 +7,7 @@ hook itself is built to avoid.
 """
 from __future__ import annotations
 
+import ast
 import json
 import re
 from html.parser import HTMLParser
@@ -136,6 +137,83 @@ def test_zooms_open_with_show_never_showmodal(template):
     """showModal() puts the zoom in the top layer, above docpin's note bubble."""
     assert re.search(r"\.show\(\)", template.script)
     assert not re.search(r"\.showModal\s*\(", template.script)
+
+
+def figure_lists() -> tuple[tuple[str, ...], tuple[str, ...]]:
+    """The closed lists of forms and node kinds, read from render.py of eli:figures."""
+    found = {}
+    source = (REPO / "skills" / "figures" / "render.py").read_text(encoding="utf-8")
+    for node in ast.parse(source).body:
+        if isinstance(node, ast.Assign) and getattr(node.targets[0], "id", None) in ("FORMS", "KINDS"):
+            found[node.targets[0].id] = ast.literal_eval(node.value)
+    return found["FORMS"], found["KINDS"]
+
+
+def test_the_template_draws_with_the_figure_grammar(template):
+    """No diagram drawn by coordinates: every figure is an eli figure, laid out in HTML."""
+    forms, kinds = figure_lists()
+    every = list(template.root.walk())
+    assert not [n for n in every if n.tag == "text"], "SVG <text>: draw it as an eli figure"
+    assert not [n for n in every if "arch-svg" in (n.attrs.get("class") or "")]
+    figures = [n for n in every if n.tag == "figure"]
+    assert len(figures) >= 4 and all(n.attrs.get("data-figure") in forms for n in figures)
+    assert all(n.attrs["data-node"] in kinds for n in every if "data-node" in n.attrs)
+    surface = nodes(template, "lambda")[0]
+    steps = [n for n in surface.walk() if "data-node" in n.attrs]
+    assert len(steps) >= 3 and all(n.attrs.get("data-zoom") for n in steps), "each step opens its zoom"
+
+
+def test_the_template_shows_a_term_and_its_definition(template):
+    terms = [n for n in template.root.walk() if "term" in (n.attrs.get("class") or "").split()]
+    assert terms and all((n.attrs.get("data-def") or "").strip() and n.attrs.get("tabindex") == "0"
+                         for n in terms)
+    assert "term.addEventListener(\"click\"" in template.script, "a tap must give the term its focus"
+
+
+# The zoom of a step, opened with its descent, measured as the reader sees it.
+MEASURE_ZOOM = r"""
+() => {
+  const box = document.querySelector("#z-1 > .box");
+  const cs = getComputedStyle(box);
+  const content = box.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+  const lead = document.querySelector("#z-1 > .box > .lead");
+  const probe = document.createElement("span");
+  probe.style.cssText = "position:absolute;visibility:hidden;width:90ch";
+  lead.appendChild(probe);
+  const ch90 = probe.getBoundingClientRect().width;
+  probe.remove();
+  const width = (selector) => document.querySelector(selector).getBoundingClientRect().width;
+  return {box: width("#z-1 > .box"), main: width("main"), window: document.documentElement.clientWidth,
+          content, ch90, lead: width("#z-1 > .box > .lead"), figure: width("#z-1 > .box > figure"),
+          table: width("#a-1 table"), open: document.getElementById("z-1").open};
+}
+"""
+
+
+def test_a_zoom_takes_the_width_of_the_page():
+    """A zoom covers the page, so it takes the page's width; only its prose is held near 90
+    characters a line, and figures and tables take the rest. At phone width nothing changes:
+    the zoom fills the window but for its 16 px gutters."""
+    from playwright.sync_api import sync_playwright
+    with sync_playwright() as playwright:
+        browser = playwright.chromium.launch()
+        try:
+            for width in (1400, 1000, 390):
+                page = browser.new_page(viewport={"width": width, "height": 900}, reduced_motion="reduce")
+                page.goto(TEMPLATE.resolve().as_uri() + "#a-1")
+                m = page.evaluate(MEASURE_ZOOM)
+                page.close()
+                assert m["open"], width
+                assert abs(m["box"] - min(m["main"], m["window"] - 32)) <= 1, (width, m)
+                assert abs(m["figure"] - m["content"]) <= 1, (width, m)
+                if m["content"] > m["ch90"]:            # room for more than 90 characters
+                    assert m["lead"] <= m["ch90"] + 1, (width, m)
+                    assert m["table"] > m["ch90"] + 1, (width, m)
+                else:
+                    assert abs(m["lead"] - m["content"]) <= 1, (width, m)
+            assert width == 390 and m["content"] < m["ch90"]   # the phone case was reached
+        finally:
+            browser.close()
 
 
 def test_the_template_carries_no_eli_exemption():

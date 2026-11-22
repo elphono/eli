@@ -7,24 +7,48 @@ vitrine ; ce fichier est le mode d'emploi de qui modifie le dépôt.
 
 | Pièce | Fichier | Testée par |
 |---|---|---|
-| le style de réponse | `output-styles/eli.md` | `tests/test_plugin.py` |
-| le skill `eli:documents` et son gabarit | `skills/documents/` | `tests/test_plugin.py` (arbre du gabarit) |
-| le contrôle des documents (HTML, visuels, niveaux) | `hooks/eli-document.py`, déclaré par `hooks/hooks.json` | `tests/test_eli_document.py` |
+| le style de réponse | `output-styles/eli.md` (270 lignes au plus : il est renvoyé à chaque requête) | `tests/test_plugin.py` |
+| le skill `eli:documents` et son gabarit | `skills/documents/` | `tests/test_plugin.py` (arbre du gabarit, largeur d'un zoom), `tests/test_figures.py` (rendu sans défaut, surface d'un écran) |
+| le skill `eli:figures` : gabarit, galerie des formes, `render.py` | `skills/figures/` | `tests/test_figures.py` |
+| le contrôle des documents (HTML, visuels, niveaux, surface, sigles) | `hooks/eli-document.py`, déclaré par `hooks/hooks.json` | `tests/test_eli_document.py` |
 
-**Langue** : tout ce qui est livré (style, skill, gabarit, hook, README) est en anglais et
+**Langue** : tout ce qui est livré (style, skills, gabarits, hook, README) est en anglais et
 générique : aucun prénom, aucun chemin personnel. `test_what_ships_is_generic` le vérifie. Ce
 fichier et les messages de commit sont en français.
 
 **Invariants** :
 
-- le contrôle **bloque** (sortie 2) un document Markdown ou une page sans visuel, et
-  **avertit** pour le reste, les niveaux d'abord ; il ne sort jamais autrement qu'en 0 ou 2 : un
-  contrôle cassé ne doit jamais casser une session. Il remplace le plugin visual-first de docpin,
-  dont il accepte les marqueurs de dérogation ;
-- les niveaux se lisent dans les attributs `data-eli` (html.parser), jamais dans le texte ;
+- le contrôle **bloque** (sortie 2) un document Markdown ou une page sans visuel (`svg`, `img`,
+  `canvas`, `table`, ou un élément `data-figure`), et **avertit** pour le reste : niveaux, TL;DR,
+  réseau, surface de plus de `SURFACE_MAX_WORDS` mots, sigles qu'aucun `data-def` ni
+  `abbr[title]` n'explique, prose par visuel. Il ne sort jamais autrement qu'en 0 ou 2 : un
+  contrôle cassé ne doit jamais casser une session. Il remplace le plugin visual-first de
+  docpin, dont il accepte les marqueurs de dérogation ;
+- niveaux, figures et définitions se lisent dans les attributs (html.parser), jamais dans le
+  texte ; la table de la docstring du hook suit chaque contrôle ;
+- l'heuristique des sigles est calibrée sur un corpus réel de documents : la modifier, c'est
+  relancer le calibrage et relire la liste qu'elle signale (du jargon, pas des mots en
+  capitales) ;
+- le bloc CSS entre `/* eli-figures:start */` et `/* eli-figures:end */` est identique, octet
+  pour octet, dans `skills/figures/template.html`, `skills/figures/forms.html` et
+  `skills/documents/template.html` ; il porte la palette : le gabarit des documents n'y ajoute
+  que `--page`, `--shadow` et `--scrim` ;
+- la surface du gabarit des documents tient en un écran (900 px de haut à 1400x900) et
+  300 mots ; un zoom prend la largeur de la page, seule sa prose est plafonnée vers 90
+  caractères ;
 - les zooms s'ouvrent par `dlg.show()`, jamais `showModal()` : la couche supérieure du navigateur
   passerait au-dessus de la bulle de note de docpin ;
-- aucune dépendance d'exécution : le hook n'emploie que la bibliothèque standard.
+- aucune dépendance d'exécution : le hook n'emploie que la bibliothèque standard ; Playwright
+  n'est qu'une dépendance de développement, pour `render.py` et ses tests.
 
-Vérifier avant de pousser : `uv run pytest -q`, `uv run ruff check hooks tests tools`, et
-`claude plugin validate --json . > /tmp/r.json; python3 tools/check_plugin_report.py /tmp/r.json`.
+Vérifier avant de pousser :
+
+```bash
+uv sync --locked && uv run playwright install chromium
+uv run pytest -q
+uv run ruff check hooks tests tools skills
+uv run python skills/figures/render.py skills/documents/template.html skills/figures/template.html skills/figures/forms.html --out /tmp/eli-render
+claude plugin validate --json . > /tmp/r.json; python3 tools/check_plugin_report.py /tmp/r.json
+```
+
+`render.py` sort en 0 sans défaut ; ses PNG se regardent, ils ne se jugent pas sur la table.

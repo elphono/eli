@@ -5,31 +5,31 @@ description: Give a document that explains or reports (spec, design note, report
 
 # ELI documents
 
-The levels, the inference table and the forms live in the `eli` output style. This skill says
-how a **document** carries them. If docpin is installed, its `docpin:annotatable-documents`
-skill gives the mechanics — where to write the document, how to hand over the link, how to wait
-for and answer notes: follow both.
+The levels, the inference table and the forms live in the `eli` output style; the figures, in
+the `eli:figures` skill. This skill says how a **document** carries them. If docpin is
+installed, its `docpin:annotatable-documents` skill gives the mechanics — where to write the
+document, how to hand over the link, how to wait for and answer notes: follow both.
 
 ## The model
 
-```
-surface ── ELI-lambda
-  promise title · one sentence · TL;DR · 3 to 5 illustrated elements (steps, loop, "done" strip)
-    │ click on an element
-    ▼
-zoom ── ELI-initiate
-  the mechanisms that make the idea possible and convenient, drawn; what works, what not yet
-    │ "Under the hood", at the bottom of EVERY zoom
-    ▼
-descent ── ELI-Architect
-  components and flows (diagram), the number that constrains, options and trade-off (table)
-    │ ⚙ only where a precise point calls for it
-    ▼
-insert ── ELI-Tech
-  file, function, command, short excerpt
-```
+| Floor | Level | Holds | Does not hold | Reached by |
+|---|---|---|---|---|
+| surface | ELI-lambda | the promise title; one "who does what" sentence; the TL;DR; one figure of 3 to 5 steps, each a title and a sentence with no jargon; what is done | mechanism, component name, technical number | the page |
+| zoom | ELI-initiate | the mechanism, drawn; what works, what not yet; each new word defined | format, protocol, file name | a click on an element |
+| descent | ELI-Architect | the components and their flows (a figure); the number that constrains; options and trade-off (a table) | code, function names | "Under the hood", at the bottom of **every** zoom |
+| insert | ELI-Tech | path, signature, command, short excerpt; the edge case | a lecture | ⚙, only where a precise point calls for it |
 
 ELI5 has no floor in a document.
+
+## The surface fits one screen
+
+**900 px high at most at 1400x900, and 300 words at most** — the check counts the words of the
+`data-eli="lambda"` element and warns above 300. What does not fit goes down into a zoom.
+Everything shown passes the style's test, *would the reader miss it?*:
+
+- the way to open the levels takes one line, never a legend of the levels;
+- a state mark ("in progress") only on the element whose state differs from the rest;
+- a level is named once, quietly, at the end of the summary that opens it; no badge elsewhere.
 
 ## Start from the template
 
@@ -40,13 +40,14 @@ being rewritten:
 
 | To | Do |
 |---|---|
-| have fewer steps | remove the card, its `.next` arrow, its `<dialog>`; adjust `.s1….s4` |
-| a subject that is not a loop | remove `.ret-path` and `.ret`, and the `z-loop` zoom |
+| have fewer steps | remove the node, its `.f-to` arrow and its `<dialog>` |
+| a subject that is not a loop | set `data-figure="chain"`, remove the `.f-cycle` wrapper, its `.f-back` and the `z-loop` zoom |
 | nothing done to show | remove `.proof` and the `z-done` zoom |
+| another figure in a zoom (a fork, a hand-off, a structure) | take its markup from `forms.html` of the `eli:figures` skill |
 | one more ELI-Tech insert | copy a `details.tech` into the descent that needs it, with a new `id` |
 
-Write the page in the reader's language: set `<html lang>` and translate the template's
-labels ("Under the hood", "Close", the level ladder) along with the samples.
+Write the page in the reader's language: set `<html lang>` and translate the template's labels
+("Click a step for its detail", "Under the hood", "Close", "Done this week") with the samples.
 
 ## The convention, attribute by attribute
 
@@ -54,23 +55,17 @@ labels ("Under the hood", "Close", the level ladder) along with the samples.
 |---|---|---|
 | the surface's `<main>` | `data-eli="lambda"` | the entry level |
 | each clickable element | `data-zoom="z-…"`, `role="button"`, `tabindex="0"` | opens the zoom with the same `id` |
-| each `<dialog class="zoom">` | `data-eli="initiate"`, `id="z-…"` | one notch of detail |
+| each `<dialog class="zoom">` | `data-eli="initiate"`, `id="z-…"`, `data-tone` of the step | one notch of detail |
 | a `<details class="descent">` in **every** zoom | `data-eli="architect"`, `id="a-…"` | "Under the hood" |
 | a `<details class="tech">`, inside a descent | `data-eli="tech"`, `id="t-…"` | one precise point of code |
+| a figure | `data-figure`, its nodes `data-node` and `data-tone` | the `eli:figures` grammar |
+| a term | `class="term" tabindex="0" data-def="…"` | its definition on hover, focus or tap |
 | a link to a level | `<a href="#t-…">` (or `#z-…`, `#a-…`) | opens the zoom and the descents that lead to the target |
 
 `id`s are unique. A link ending in `#a-2` opens the descent of zoom 2 directly: that is what to
 give in the terminal to point at a precise level. docpin anchors a note on the first `id` it
-meets going up, which keeps the note in place when the document changes.
-
-## What each floor holds
-
-| Floor | Holds | Does not hold |
-|---|---|---|
-| ELI-lambda surface | the promise; one "who does what" sentence; the TL;DR; each step = a title, a visual, a sentence with no jargon; the state ("works", "in progress") | mechanism, component name, technical number |
-| ELI-initiate zoom | the mechanism as a chain or a diagram; "what works / not yet"; each new word defined | format, protocol, file name |
-| ELI-Architect descent | a diagram of the components and their flows; the number that constrains; a table of options and the trade-off | code, function names |
-| ELI-Tech insert | path, signature, command, short excerpt; the edge case | a lecture |
+meets going up, which keeps the note in place when the document changes. A zoom takes the width
+of the page it covers; only its prose is held near 90 characters a line.
 
 ## The TL;DR, and the decisions
 
@@ -98,35 +93,39 @@ doubt, a nuance. The test is not length but the presence of something to underst
 
 | The passage carries | Example | Form |
 |---|---|---|
-| a concept, a notion of the project | what a "lease" or a "recipe" is | annotated SVG diagram |
-| a mechanism | what happens when the resource is already taken | diagram, before/after |
-| a flow between several actors | who writes what, in which order, where | swimlanes, sequence |
-| an example, a use case | the real gesture, from start to finish | numbered route |
-| a comparison on several dimensions | three options, four criteria | table, coloured matrix |
-| a number that matters | 12 gestures, 9 traps | tile, gauge, bar |
+| a concept, a notion of the project | what a "lease" or a "recipe" is | a figure: `map` |
+| a mechanism | what happens when the resource is already taken | a figure: `chain` or `branch` |
+| a flow between several actors | who writes what, in which order, where | a figure: `lanes` |
+| an example, a use case | the real gesture, from start to finish | a figure: `chain` |
+| a comparison on several dimensions | three options, four criteria | a table |
+| a number that matters | 12 gestures, 9 traps | a tile (`.target`) |
 
 A picture must not cost more than the paragraph it replaces: a two-node diagram, or an image
-that repeats the title above it, is a regression.
+that repeats the title above it, is a regression. Every figure is an eli figure: its grammar,
+forms and budgets are written in the `eli:figures` skill and nowhere else. A figure rendered
+as an image keeps its source next to it and stays under 1 MB.
 
-Figures are **sober**: what is made to stop a scrolling thumb is not made to be read. Light
-background (dark follows the system), few colours, **each one carrying a distinction**,
-saturated enough to tell apart at a glance — monochrome is not neutral, it is dull. A figure
-rendered as an image keeps its source next to it, so it is edited rather than redone, and stays
-light: render it at scale 1, under 1 MB.
+## Words
+
+Every label reads on its own. An abbreviation or an uncommon word carries its definition at its
+first appearance in the page, as a term: `<span class="term" tabindex="0" data-def="Heads-up
+display: a panel over the screen">HUD</span>` (an `<abbr title>` counts too). The check lists
+the abbreviations nothing in the page defines; common ones (OK, PDF, URL, USB) and code inside
+`code`, `pre` or `kbd` need nothing.
 
 ## Traps
 
 - **`dlg.show()`, never `showModal()`**: the browser's top layer would sit above docpin's note
   bubble, and a note pinned in a zoom would open out of sight.
-- The text of a figure reads at its **displayed** size: a 1080 px image shown at 500 px halves
-  its type. Aim for 14 px displayed at least; the template draws architecture diagrams
-  vertically, with a narrow `viewBox`, so they stay legible on a phone.
+- Text lives in HTML, never in SVG `<text>` or at fixed coordinates: it wraps, stays 14 px at
+  least, and reads at phone width.
 - A note pinned inside a closed `<details>` shows on its visible ancestor: that is expected.
 
 ## Before handing over the link
 
 1. The `eli-document` check stayed silent. A page whose form is justified (a transcript, raw
    data) carries `<!-- eli: exemption — reason -->` in its first five lines.
-2. You **looked at the rendered page** — light, dark, at phone width — and opened at least one
-   zoom and its descent.
+2. You rendered it with the `eli:figures` script — `python3 <that skill's directory>/render.py
+   PAGE --out <scratch folder>`: the surface and every zoom with its descents open, light, dark
+   and phone, a term shown — until it exits 0, and you **looked at** every PNG.
 3. In the reply: the link to the surface, and one line on what to look at first.

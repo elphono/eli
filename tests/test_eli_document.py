@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -349,3 +350,135 @@ def test_the_template_written_as_a_document_is_left_alone(tmp_path):
                       encoding="utf-8")
     said = run(payload)
     assert said is not None and "no TL;DR" in said
+    target.write_text(TEMPLATE.read_text(encoding="utf-8").replace("data-def=", "data-was="),
+                      encoding="utf-8")
+    assert listed(run(payload)) == ["API"]      # the abbreviation it shows, defined by a term
+
+
+# -- an eli figure is a visual ------------------------------------------------------------------
+
+FIGURE = ('<figure data-figure="chain"><ol class="f-chain"><li data-node="action">You ask</li>'
+          '<li class="f-to" aria-hidden="true"></li><li data-node="result">It answers</li></ol></figure>')
+
+
+def test_an_eli_figure_counts_as_a_visual(tmp_path):
+    body = f'<main data-eli="lambda">{TLDR}{FIGURE}</main><dialog data-eli="initiate"></dialog>'
+    assert "<svg" not in body and "<table" not in body
+    assert run(written(tmp_path, "docs/f.html", page(body))) is None
+
+
+@pytest.mark.parametrize("old, new", [('data-figure="chain"', 'data-fig="chain"'),
+                                      ('data-figure="chain"', 'data-figure=""'),
+                                      (FIGURE, '<pre><code>&lt;figure data-figure="chain"&gt;</code></pre>')])
+def test_a_misnamed_empty_or_quoted_figure_is_no_visual(tmp_path, old, new):
+    body = f'<main data-eli="lambda">{TLDR}{FIGURE}</main><dialog data-eli="initiate"></dialog>'
+    said = blocked(written(tmp_path, "docs/f.html", page(body.replace(old, new))))
+    assert said.startswith("f.html: no visual in this HTML page") and "data-figure" in said
+
+
+# -- the surface fits in SURFACE_MAX_WORDS ------------------------------------------------------
+
+def surface(words: int, extra: str = "") -> str:
+    """A page whose surface shows `words` words (the TL;DR's included) and holds `extra`."""
+    tldr_words = len(re.sub(r"<[^>]+>", " ", TLDR).split())     # the words the TL;DR shows
+    filler = " ".join(f"w{i}" for i in range(words - tldr_words))
+    return page(f'<main data-eli="lambda">{TLDR}{SVG}<span>{filler}</span>{extra}</main>'
+                '<dialog data-eli="initiate"><p>zoom</p></dialog>')
+
+
+def test_a_surface_of_300_words_is_left_alone_and_301_warns_with_its_count(tmp_path):
+    assert run(written(tmp_path, "docs/s.html", surface(300))) is None
+    said = run(written(tmp_path, "docs/s.html", surface(301)))
+    assert said is not None and said.startswith('s.html: the surface (data-eli="lambda") holds 301 words, over 300')
+    assert "move the rest down into the zooms" in said
+
+
+FIFTY = " ".join(f"x{i}" for i in range(50))
+HIDDEN_FROM_THE_SURFACE = [
+    f'<div data-eli="initiate">{FIFTY}</div>',                       # another level
+    f'<section data-eli="architect"><p>{FIFTY}</p></section>',
+    f"<style>.a{{}} /* {FIFTY} */</style>", f"<script>// {FIFTY}</script>",
+    f"<div hidden>{FIFTY}</div>", f"<dialog><p>{FIFTY}</p></dialog>",   # not shown
+    f"<details><summary></summary><p>{FIFTY}</p></details>",
+    "→ · — ✓ " * 20,                                                   # no word in them
+]
+
+
+@pytest.mark.parametrize("extra", HIDDEN_FROM_THE_SURFACE)
+def test_what_the_surface_does_not_show_is_not_counted(tmp_path, extra):
+    assert run(written(tmp_path, "docs/s.html", surface(300, extra))) is None
+
+
+@pytest.mark.parametrize("extra", [f"<div>{FIFTY}</div>", f'<div data-eli="lambda">{FIFTY}</div>',
+                                   f"<dialog open><p>{FIFTY}</p></dialog>",
+                                   f"<details open><summary></summary><p>{FIFTY}</p></details>",
+                                   f"<details><summary>{FIFTY}</summary><p>hidden</p></details>"])
+def test_what_the_surface_shows_is_counted(tmp_path, extra):
+    said = run(written(tmp_path, "docs/s.html", surface(300, extra)))
+    assert said is not None and "holds 350 words, over 300" in said
+
+
+# -- abbreviations are explained where they are used --------------------------------------------------
+
+def jargon(prose: str, extra: str = "") -> str:
+    return page(f'<main data-eli="lambda">{TLDR}{SVG}<p>{prose}</p>{extra}</main>'
+                '<dialog data-eli="initiate"><p>zoom</p></dialog>')
+
+
+def listed(said: str | None) -> list[str]:
+    """The abbreviations a warning lists, or [] when it lists none."""
+    if said is None or "abbreviation(s) that nothing in the page explains: " not in said:
+        return []
+    return said.split("abbreviation(s) that nothing in the page explains: ")[1].split(". ")[0].split(", ")
+
+
+SENTENCE = "The HUD reads MIDI notes through an API, then an LLM writes the plan."
+
+
+def test_undefined_abbreviations_are_listed_with_the_way_to_explain_them(tmp_path):
+    said = run(written(tmp_path, "docs/j.html", jargon(SENTENCE)))
+    assert listed(said) == ["HUD", "MIDI", "API", "LLM"]
+    assert "4 abbreviation(s)" in said and 'data-def="what it means"' in said and "<abbr" in said
+
+
+DEFINITIONS = {
+    "HUD": '<span class="term" tabindex="0" data-def="Heads-up display: a panel over the screen">HUD</span>',
+    "MIDI": '<abbr title="Musical Instrument Digital Interface">MIDI</abbr>',
+    "API": '<span class="term" tabindex="0" data-def="The door a program opens to another">APIs</span>',
+    "LLM": '<span class="term" tabindex="0" data-def="Large language model">the LLM</span>',
+}
+
+
+@pytest.mark.parametrize("word", DEFINITIONS)
+def test_an_abbreviation_defined_once_is_no_longer_listed(tmp_path, word):
+    said = run(written(tmp_path, "docs/j.html", jargon(SENTENCE, f"<p>{DEFINITIONS[word]}</p>")))
+    assert listed(said) == [w for w in ("HUD", "MIDI", "API", "LLM") if w != word]
+
+
+def test_all_defined_the_page_is_left_alone(tmp_path):
+    extra = "".join(f"<span>{d}</span>" for d in DEFINITIONS.values())   # no <p>: no prose count
+    assert run(written(tmp_path, "docs/j.html", jargon(SENTENCE + " The HUD again.", extra))) is None
+
+
+@pytest.mark.parametrize("definition", ['<span data-def="">HUD</span>', '<span data-def>HUD</span>',
+                                        "<abbr>HUD</abbr>", '<abbr title=" ">HUD</abbr>',
+                                        '<span title="Heads-up display">HUD</span>'])
+def test_an_empty_or_misplaced_definition_defines_nothing(tmp_path, definition):
+    said = run(written(tmp_path, "docs/j.html", jargon("The HUD shows it.", f"<p>{definition}</p>")))
+    assert listed(said) == ["HUD"]
+
+
+@pytest.mark.parametrize("prose", [
+    "<code>HUD</code> and <pre>MIDI</pre> and <kbd>API</kbd> and <samp>LLM</samp>",   # code is code
+    "OK, a PDF at a URL on a USB key. TL;DR: ELI5, then ELI-lambda.",                # common words
+    "NEVER do that, never. DO NOT REMOVE IT. Then PLEASE see EX-R-04, PR-02, NOTES.md, phase II.",
+])
+def test_code_common_words_emphasis_ids_and_files_are_never_listed(tmp_path, prose):
+    said = run(written(tmp_path, "docs/j.html", jargon(prose + " The HUD.")))
+    assert listed(said) == ["HUD"]     # the witness: the same page does list an abbreviation
+
+
+def test_a_long_list_of_abbreviations_is_cut_and_counted(tmp_path):
+    words = ["AAB", "BBC", "CCD", "DDE", "EEF", "FFG", "GGH", "HHJ", "JJK", "KKL", "LLM", "MMN", "NNP", "PPQ"]
+    said = run(written(tmp_path, "docs/j.html", jargon(" and ".join(words))))
+    assert listed(said) == [*words[:11], "MMN and 2 more"] and "14 abbreviation(s)" in said

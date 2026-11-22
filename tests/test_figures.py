@@ -27,6 +27,7 @@ BROKEN = REPO / "tests" / "fixtures" / "figure-broken.html"
 PLUGIN = REPO / ".claude-plugin" / "plugin.json"
 DOCUMENT = REPO / "skills" / "documents" / "template.html"
 PAGES = [TEMPLATE, GALLERY]
+SHIPPED_PAGES = [*PAGES, DOCUMENT]     # every page that carries figures
 LEVELS = ("lambda", "initiate", "architect")
 START, END = "/* eli-figures:start */", "/* eli-figures:end */"
 VOID = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"}
@@ -178,7 +179,7 @@ def test_the_node_kinds_are_one_closed_list_shown_once_each_in_the_gallery():
     assert sorted(n.attrs["data-tone"] for n in strip.walk() if n.tag == "li") == sorted(tones)
 
 
-@pytest.mark.parametrize("path", PAGES, ids=lambda p: p.name)
+@pytest.mark.parametrize("path", SHIPPED_PAGES, ids=lambda p: p.parent.name + "/" + p.name)
 def test_every_figure_and_node_of_a_page_is_in_the_lists(path):
     found = tree(path)
     figures = [n for n in found.root.walk() if n.tag == "figure"]
@@ -187,7 +188,7 @@ def test_every_figure_and_node_of_a_page_is_in_the_lists(path):
     assert nodes and all(n.attrs["data-node"] in constant("KINDS") for n in nodes)
 
 
-@pytest.mark.parametrize("path", PAGES, ids=lambda p: p.name)
+@pytest.mark.parametrize("path", SHIPPED_PAGES, ids=lambda p: p.parent.name + "/" + p.name)
 def test_no_svg_text_in_a_figure(path):
     for node in tree(path).root.walk():
         if node.tag == "text":
@@ -217,7 +218,7 @@ def test_the_tldr_sits_above_the_selector_in_one_to_three_sentences():
     assert 1 <= len(sentences) <= 3
 
 
-@pytest.mark.parametrize("path", PAGES, ids=lambda p: p.name)
+@pytest.mark.parametrize("path", SHIPPED_PAGES, ids=lambda p: p.parent.name + "/" + p.name)
 def test_every_term_carries_its_definition_and_takes_the_focus(path):
     terms = [n for n in tree(path).root.walk() if "term" in n.classes()]
     assert terms
@@ -229,7 +230,7 @@ def test_every_term_carries_its_definition_and_takes_the_focus(path):
     assert re.search(r"\.term:hover::after,\.term:focus::after\{display:block\}", block)
 
 
-@pytest.mark.parametrize("path", [*PAGES, BROKEN], ids=lambda p: p.name)
+@pytest.mark.parametrize("path", [*SHIPPED_PAGES, BROKEN], ids=lambda p: p.parent.name + "/" + p.name)
 def test_the_pages_are_self_contained(path):
     for node in tree(path).root.walk():
         for name in ("src", "href"):
@@ -242,6 +243,7 @@ def test_the_pages_are_self_contained(path):
 def test_the_shared_css_block_is_the_same_byte_for_byte():
     block = shared_block(TEMPLATE)
     assert block == shared_block(GALLERY)
+    assert block == shared_block(DOCUMENT), "the documents template copies it too"
     for token in ("--you", "--sys", "--key", "--ok", "[data-node=", ".f-to", ".term"):
         assert token in block, token
 
@@ -357,9 +359,26 @@ def test_the_clean_twin_of_the_witness_has_no_defect(tmp_path):
     assert re.search(r"^  1400 light\s+0\s+0\s+0\s+14\s+19\s", table, re.MULTILINE), table
 
 
-def test_render_measures_a_zoom_alone_with_its_descents_open(tmp_path):
-    code, stdout, _ = render(DOCUMENT, out=tmp_path)
-    assert code in (0, 1)
+@pytest.fixture(scope="module")
+def document(tmp_path_factory):
+    out = tmp_path_factory.mktemp("document")
+    return (*render(DOCUMENT, out=out), out)
+
+
+def test_the_documents_template_renders_clean_and_its_surface_fits_one_screen(document):
+    code, stdout, stderr, _ = document
+    assert code == 0, stdout + stderr
+    assert "no defect" in stdout
+    rows = re.search(r"^template\.html · surface\n  viewport.*\n((?:  .*\n)+)", stdout, re.MULTILINE).group(1)
+    light = next(line.split() for line in rows.splitlines() if line.strip().startswith("1400 light "))
+    words, height, window = int(light[7]), int(light[8]), light[9]
+    assert window == "1400x900" and height <= 900, f"the surface is {height} px high: one screen at most"
+    assert words <= 300
+
+
+def test_render_measures_a_zoom_alone_with_its_descents_open(document):
+    code, stdout, _, tmp_path = document
+    assert code == 0
     zooms = [n.attrs["id"] for n in tree(DOCUMENT).root.walk()
              if n.tag == "dialog" and "zoom" in n.classes()]
     states = re.findall(r"^template\.html · (\S+)$", stdout, re.MULTILINE)
