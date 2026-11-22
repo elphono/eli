@@ -28,6 +28,12 @@ Defects, all hard:
 | too-many-nodes  | more than MAX_NODES nodes shown in one figure                       |
 | contract        | a form or node kind outside the closed lists, or SVG <text> in a figure |
 | term-hidden     | a term whose definition does not show on hover or tap              |
+| low-contrast    | text whose contrast with what is painted behind it is under WCAG AA |
+| loose-link      | an arrow (`.f-to`, `.f-link`) whose two ends do not reach a node    |
+
+The last two are what a light capture at 1400 px cannot show: a colour left unchanged in the
+dark theme, an arrow left floating when the phone layout wraps. Measured in every window, they
+spare the reader of the render loop from opening every dark and phone capture at every pass.
 
 Exit codes: 0 no defect, 1 defects, 3 cannot render (Playwright or Chromium missing,
 a page that does not exist or does not load). Playwright is a development
@@ -42,6 +48,10 @@ from pathlib import Path
 FORMS = ("chain", "branch", "cycle", "lanes", "map")
 KINDS = ("actor", "action", "question", "store", "result", "note")
 MIN_TEXT_PX = 14
+# WCAG 2 AA: 4.5:1 for text, 3:1 for large text (24 px, or 18.66 px bold).
+MIN_CONTRAST, MIN_CONTRAST_LARGE = 4.5, 3.0
+# An arrow end may sit this far from its node, or dip this far into it.
+LINK_GAP_PX, LINK_DIP_PX = 8, 14
 MAX_NODES = 15
 # Budgets of the skill, noted but not defects: nodes per figure at each level, words per node label.
 LEVEL_NODES = {"eli-lambda": 9, "eli-initiate": 12, "eli-architect": 15}
@@ -57,7 +67,7 @@ MISSING_CHROMIUM = ("render.py: Chromium for Playwright cannot start ({error}). 
 
 # Runs in the page. Returns the measures of the state as it is displayed, and its defects.
 MEASURE = r"""
-([forms, kinds, minPx, maxNodes, labelWords, scope]) => {
+([forms, kinds, minPx, maxNodes, labelWords, scope, minContrast, minContrastLarge, linkGap, linkDip]) => {
   const vw = document.documentElement.clientWidth;
   // A zoom covers the page: only what it shows is measured.
   const root = (scope && document.getElementById(scope)) || document.body;
@@ -91,7 +101,63 @@ MEASURE = r"""
     add("hscroll", culprit, `${Math.round(hscroll)} px wider than the window` + (!out[0] && tips[0] ? " (its definition)" : ""));
   }
 
-  // Text: size, words, and whether each line is whole and inside its box
+  // Colours, whatever their CSS syntax, read back through a one-pixel canvas.
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = 1;
+  const ctx = canvas.getContext("2d", {willReadFrequently: true});
+  const rgba = (css) => {
+    ctx.clearRect(0, 0, 1, 1);
+    ctx.fillStyle = "rgba(0,0,0,0)";
+    ctx.fillStyle = css;
+    ctx.fillRect(0, 0, 1, 1);
+    const d = ctx.getImageData(0, 0, 1, 1).data;
+    return [d[0], d[1], d[2], d[3] / 255];
+  };
+  const over = (top, below) => [0, 1, 2].map((i) => top[3] * top[i] + (1 - top[3]) * below[i]).concat(1);
+  // A pseudo-element counts as a background only when it is drawn under the element (negative
+  // z-index) and covers most of it: the fill of a question shape, not a bullet, a line or a
+  // definition shown below a term.
+  const under = (style, box) => style.content !== "none" && style.content !== "normal" &&
+    style.display !== "none" && style.position === "absolute" && parseInt(style.zIndex, 10) < 0 &&
+    parseFloat(style.width) >= 0.8 * box.width && parseFloat(style.height) >= 0.8 * box.height;
+  // What is painted behind an element: its own background, or the one a pseudo-element lays
+  // under its text (the question shape), then its ancestors'. null when an image or a gradient
+  // is in the way: the contrast is then unknown, not wrong.
+  const behind = (el) => {
+    const layers = [];
+    for (let a = el; a; a = a.parentElement) {
+      const cs = getComputedStyle(a);
+      if (cs.backgroundImage !== "none") return null;
+      let colour = rgba(cs.backgroundColor);
+      if (colour[3] === 0) {
+        for (const pseudo of ["::after", "::before"]) {
+          const ps = getComputedStyle(a, pseudo);
+          if (under(ps, a.getBoundingClientRect()) && ps.backgroundImage === "none") {
+            const pc = rgba(ps.backgroundColor);
+            if (pc[3] > 0) { colour = pc; break; }
+          }
+        }
+      }
+      if (colour[3] > 0) layers.push(colour);
+      if (colour[3] >= 0.999) break;
+    }
+    return layers.reduceRight((below, top) => over(top, below), [255, 255, 255, 1]);
+  };
+  const luminance = (c) => {
+    const [r, g, b] = c.slice(0, 3).map((v) => {
+      v /= 255;
+      return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  };
+  const ratio = (a, b) => {
+    const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+    return (hi + 0.05) / (lo + 0.05);
+  };
+  const dim = new Set();
+  let minRatio = Infinity;
+
+  // Text: size, words, contrast, and whether each line is whole and inside its box
   let minFont = Infinity, minAt = "", words = 0;
   const cut = new Set();
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
@@ -111,6 +177,21 @@ MEASURE = r"""
     }
     if (size < minFont) { minFont = size; minAt = name(el); }
     if (size < minPx - 0.01) add("small-text", el, `${size.toFixed(1)} px, under ${minPx} px`);
+    if (!(el instanceof SVGElement) && !dim.has(el)) {
+      const back = behind(el);
+      if (back) {
+        const cs = getComputedStyle(el);
+        const ink = over(rgba(cs.color), back);
+        const r = ratio(ink, back);
+        const large = size >= 24 || (size >= 18.66 && parseInt(cs.fontWeight, 10) >= 700);
+        const need = large ? minContrastLarge : minContrast;
+        minRatio = Math.min(minRatio, r);
+        if (r < need - 0.005) {
+          dim.add(el);
+          add("low-contrast", el, `${r.toFixed(2)}:1, under ${need}:1`);
+        }
+      }
+    }
     // Text in a box that scrolls (code in a <pre>) is reached by scrolling it, not cut.
     let scrolls = false;
     for (let a = el; a && a !== root.parentElement; a = a.parentElement) {
@@ -170,11 +251,48 @@ MEASURE = r"""
     const kind = node.getAttribute("data-node");
     if (!kinds.includes(kind)) add("contract", node, `unknown node kind "${kind}", not one of ${kinds.join(", ")}`);
   }
+  // Arrows: each end reaches a node, along the arrow's own direction
+  for (const fig of root.querySelectorAll("figure[data-figure]")) {
+    if (!shown(fig)) continue;
+    // An arrow may also leave an answer of a question (.f-ans): it starts a path.
+    const boxes = [...fig.querySelectorAll("[data-node], .f-ans")].filter(shown).map((n) => n.getBoundingClientRect());
+    for (const link of fig.querySelectorAll(".f-to, .f-link")) {
+      if (!shown(link)) continue;
+      const r = link.getBoundingClientRect();
+      if (r.width < 1 || r.height < 1) continue;
+      // Its line is drawn by ::before; without it (a map on a phone reads as a list of
+      // "A → B" labels) there is no arrow to check.
+      const line = getComputedStyle(link, "::before");
+      if (line.display === "none" || line.content === "none" || line.content === "normal") continue;
+      const vertical = link.classList.contains("f-link") ||
+                       getComputedStyle(link).flexDirection.startsWith("column");
+      const reach = (gap) => gap <= linkGap && gap >= -linkDip;
+      let start = false, end = false;
+      for (const b of boxes) {
+        if (vertical) {
+          const x = (r.left + r.right) / 2;
+          if (x < b.left || x > b.right) continue;
+          start = start || reach(r.top - b.bottom);
+          end = end || reach(b.top - r.bottom);
+        } else {
+          const y = (r.top + r.bottom) / 2;
+          if (y < b.top || y > b.bottom) continue;
+          start = start || reach(r.left - b.right);
+          end = end || reach(b.left - r.right);
+        }
+      }
+      if (!start || !end) {
+        const which = !start && !end ? "neither end" : !start ? "its start" : "its end";
+        add("loose-link", link, `${which} reaches a node (${vertical ? "vertical" : "horizontal"})`);
+      }
+    }
+  }
   const longLabels = [...root.querySelectorAll("figure[data-figure] [data-node] .f-t")].filter(shown)
     .map((el) => (el.textContent || "").trim().replace(/\s+/g, " "))
     .filter((text) => text.split(" ").length > labelWords);
   return {defects, longLabels, figNodes, hscroll: Math.round(hscroll), cut: cut.size, overlaps,
           minFont: minFont === Infinity ? null : Math.round(minFont * 10) / 10, minAt,
+          minRatio: minRatio === Infinity ? null : Math.round(minRatio * 100) / 100,
           nodes: nodes.length, words, height: doc.scrollHeight, window: `${innerWidth}x${innerHeight}`};
 }
 """
@@ -253,7 +371,8 @@ def load(context, url: str):
 
 
 def measure(page, scope: str | None = None) -> dict:
-    return page.evaluate(MEASURE, [list(FORMS), list(KINDS), MIN_TEXT_PX, MAX_NODES, LABEL_WORDS, scope])
+    return page.evaluate(MEASURE, [list(FORMS), list(KINDS), MIN_TEXT_PX, MAX_NODES, LABEL_WORDS, scope,
+                                   MIN_CONTRAST, MIN_CONTRAST_LARGE, LINK_GAP_PX, LINK_DIP_PX])
 
 
 def fit_zoom(page, state: str, width: int, height: int) -> None:

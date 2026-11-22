@@ -304,7 +304,11 @@ WITNESS = {
     "small-text": ["p.tiny"],
     "too-many-nodes": ["figure#many"],
     "term-hidden": ["span.term"],
+    "low-contrast": ["p.pale", "p.ink"],
+    "loose-link": ["div.f-to"],
 }
+# Defects that show in some windows only, and those windows.
+ONLY_IN = {"p.ink": "1400 dark"}
 CONTRACT = ('unknown form "flowchart"', 'unknown node kind "widget"', "SVG <text> in a figure")
 
 
@@ -321,6 +325,9 @@ def test_render_names_each_defect_of_the_witness(witness, kind):
     for element in WITNESS[kind]:
         assert any(element in line for line in lines), f"{kind}: {element} not named\n{stdout}"
     assert len(lines) == len(WITNESS[kind]) * (2 if kind == "term-hidden" else 1), lines
+    for element, windows in ONLY_IN.items():
+        for line in (line for line in lines if element in line):
+            assert line.split(" · ")[3] == windows, f"{element} should show in {windows} only: {line}"
 
 
 @pytest.mark.parametrize("detail", CONTRACT)
@@ -330,7 +337,8 @@ def test_render_names_each_breach_of_the_contract(witness, detail):
 
 def test_the_witness_shows_each_defect_in_every_window(witness):
     for line in witness[1].splitlines():
-        if line.startswith("DEFECT") and not line.startswith("DEFECT term-hidden"):
+        if line.startswith("DEFECT") and not line.startswith("DEFECT term-hidden") \
+                and not any(element in line for element in ONLY_IN):
             assert "1400 light, 1400 dark, 390 light" in line, line
 
 
@@ -338,7 +346,8 @@ TWIN = {
     BROKEN.read_text(encoding="utf-8").split('<style id="defects">')[1].split("</style>")[0]:
         "\n.wide{width:100%}\n.clip{width:120px;overflow:hidden;white-space:normal}\n.off{margin-left:0}\n"
         ".spill{white-space:normal}\n.over{margin-left:0}\n"
-        ".tiny{font-size:14px}\n.extra{display:none}\n",
+        ".tiny{font-size:14px}\n.extra{display:none}\n.pale{color:#737373}\n.loose{margin-left:0}\n"
+        "@media (prefers-color-scheme: dark){.ink{background:#fbfaf7}}\n",
     'data-figure="flowchart"': 'data-figure="chain"',
     'data-node="widget"': 'data-node="action"',
     '<text x="0" y="18" font-size="16">svg text</text>': '<rect width="20" height="20"/>',
@@ -354,9 +363,10 @@ def test_the_clean_twin_of_the_witness_has_no_defect(tmp_path):
     twin.write_text(text, encoding="utf-8")
     code, stdout, stderr = render(twin, out=tmp_path / "out")
     assert code == 0, stdout + stderr
-    # the edge is reached: 14 px is the smallest text, and the full figure holds 15 nodes
+    # the edge is reached: 14 px is the smallest text, the full figure holds 15 nodes, the grey
+    # is at 4.54:1 (its witness at 4.48:1), and the arrow ends sit 8 px from their nodes
     table = stdout.split("figure-twin.html · page\n")[1]
-    assert re.search(r"^  1400 light\s+0\s+0\s+0\s+14\s+19\s", table, re.MULTILINE), table
+    assert re.search(r"^  1400 light\s+0\s+0\s+0\s+14\s+21\s", table, re.MULTILINE), table
 
 
 @pytest.fixture(scope="module")

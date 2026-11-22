@@ -134,18 +134,25 @@ python3 <this skill's directory>/render.py PAGE --out <scratch folder>
 It captures every level at 1400x900 light, 1400x900 dark and 390x844 light, and a term's
 definition shown, then prints one table of measures per level and one line per defect: sideways
 scrolling, cut text, overlapping nodes, text under 14 px, more than 15 nodes, a shape or form
-outside the lists, SVG text, a definition that does not show. Exit code 0: no defect; 1:
-defects; 3: it cannot render (it says how to install Playwright and Chromium).
+outside the lists, SVG text, a definition that does not show, text under the WCAG AA contrast,
+an arrow whose end reaches no node. Exit code 0: no defect; 1: defects; 3: it cannot render (it
+says how to install Playwright and Chromium).
 
-Then **open every PNG** and critique it against this list, writing down what you see:
+The measures run in every window at every pass; a picture costs far more to read than a line.
+So open:
+
+- **at every pass**, the 1400 light capture of each level (`*-1400-light.png`);
+- **at the last pass**, once the exit code is 0, every other capture too: dark, phone, term.
+
+Critique what you open against this list, writing down what you see:
 
 1. Does a node touch, cover or crowd another? Is any label cut or squeezed?
 2. Does every arrow leave the right node and arrive at the right one, pointing the right way?
 3. Hierarchy: does the eye land first on the message, then on the paths?
 4. Can each label be read alone, at its size, without the paragraph?
-5. Light and dark: is every colour still distinct, every fill still readable?
-6. Phone: does each form read top to bottom, with nothing too narrow to read?
-7. The term capture: does the definition show whole, inside the screen?
+5. Last pass, dark: is every colour still distinct, every fill still readable?
+6. Last pass, phone: does each form read top to bottom, with nothing too narrow to read?
+7. Last pass, the term capture: does the definition show whole, inside the screen?
 8. Budgets: nodes and words per level, labels of 8 words at most.
 
 Fix, render again. **Two passes at least**, and until the exit code is 0 and the list is clean.

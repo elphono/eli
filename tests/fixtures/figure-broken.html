@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Broken figure: the witness of render.py</title>
 <!--
-  Every hard defect of skills/figures/render.py, once each, in its own element.
+  Every hard defect of skills/figures/render.py, once each, in its own element; the
+  dark-only contrast defect shows that the dark window is measured, not only captured.
   tests/test_figures.py builds the clean twin of this page by replacing the style
   #defects and the three marked attributes: the twin must render with no defect.
 -->
@@ -23,6 +24,9 @@ p{margin:0 0 16px}
 .term:hover::after,.term:focus::after{display:block}
 /* not a defect: a long code line in a box that scrolls is reached by scrolling, not cut */
 pre{max-width:100%;overflow-x:auto;margin:0 0 16px;padding:6px;background:#efefed;font-size:15px}
+.f-to{display:flex;align-items:center;width:30px;color:#1d1f23}
+.f-to::before{content:"";flex:1;height:3px;background:currentColor}
+.ink{color:#1d1f23}
 </style>
 <style id="defects">
 .wide{width:calc(100% + 40px)}
@@ -33,6 +37,9 @@ pre{max-width:100%;overflow-x:auto;margin:0 0 16px;padding:6px;background:#efefe
 .tiny{font-size:13px}
 .extra{display:block}
 .term:hover::after,.term:focus::after{display:none}
+.pale{color:#747474}
+.loose{margin-left:40px}
+@media (prefers-color-scheme: dark){.ink{background:#26282c}}
 </style>
 </head>
 <body>
@@ -61,6 +68,11 @@ pre{max-width:100%;overflow-x:auto;margin:0 0 16px;padding:6px;background:#efefe
     <svg viewBox="0 0 120 24" width="120" height="24"><text x="0" y="18" font-size="16">svg text</text></svg>
   </figure>
   <pre><code>no defect: render.py --out /a/folder/that/is/long --and --a --line --that --goes --far --beyond --the --width --of --a --phone --and --of --a --wide --screen --too --until --it --scrolls</code></pre>
+  <p class="pale">low-contrast: a grey just under 4.5:1, in every window</p>
+  <p class="ink">low-contrast: dark ink left on a dark background, in the dark theme only</p>
+  <figure data-figure="chain" id="loose" class="row">
+    <div data-node="action">from</div><div class="f-to"></div><div data-node="action" class="loose">to</div>
+  </figure>
   <p>term-hidden: a <span class="term" tabindex="0" data-def="A definition that must show.">term</span> here</p>
 </main>
 </body>
