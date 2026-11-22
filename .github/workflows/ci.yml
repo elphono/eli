@@ -5,9 +5,10 @@ on:
     branches: [main]
   pull_request:
 
+# Pinned: Playwright 1.58.0 (the dev dependency) cannot install Chromium on ubuntu-latest (26.04).
 jobs:
   checks:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
@@ -18,7 +19,7 @@ jobs:
       - run: uv run pytest -q
 
   plugin:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
