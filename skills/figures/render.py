@@ -43,7 +43,7 @@ FORMS = ("chain", "branch", "cycle", "lanes", "map")
 KINDS = ("actor", "action", "question", "store", "result", "note")
 MIN_TEXT_PX = 14
 MAX_NODES = 15
-# Budgets of the skill, noted but not defects: nodes shown per level, words per node label.
+# Budgets of the skill, noted but not defects: nodes per figure at each level, words per node label.
 LEVEL_NODES = {"eli-lambda": 9, "eli-initiate": 12, "eli-architect": 15}
 LABEL_WORDS = 8
 VIEWPORTS = (("1400", 1400, 900, "light"), ("1400", 1400, 900, "dark"), ("390", 390, 844, "light"))
@@ -156,11 +156,13 @@ MEASURE = r"""
       }
     }
   }
+  const figNodes = [];
   for (const fig of root.querySelectorAll("figure[data-figure]")) {
     if (!shown(fig)) continue;
     const form = fig.getAttribute("data-figure");
     if (!forms.includes(form)) add("contract", fig, `unknown form "${form}", not one of ${forms.join(", ")}`);
     const count = [...fig.querySelectorAll("[data-node]")].filter(shown).length;
+    figNodes.push(count);
     if (count > maxNodes) add("too-many-nodes", fig, `${count} nodes, over ${maxNodes}`);
     for (const text of fig.querySelectorAll("svg text")) add("contract", text, "SVG <text> in a figure");
   }
@@ -171,7 +173,7 @@ MEASURE = r"""
   const longLabels = [...root.querySelectorAll("figure[data-figure] [data-node] .f-t")].filter(shown)
     .map((el) => (el.textContent || "").trim().replace(/\s+/g, " "))
     .filter((text) => text.split(" ").length > labelWords);
-  return {defects, longLabels, hscroll: Math.round(hscroll), cut: cut.size, overlaps,
+  return {defects, longLabels, figNodes, hscroll: Math.round(hscroll), cut: cut.size, overlaps,
           minFont: minFont === Infinity ? null : Math.round(minFont * 10) / 10, minAt,
           nodes: nodes.length, words, height: doc.scrollHeight, window: `${innerWidth}x${innerHeight}`};
 }
@@ -315,8 +317,9 @@ def render_page(browser, path: Path, out: Path, report: list[str], defects: list
         report.append(table(path.name, state, rows))
         first = rows[0][1]
         budget = LEVEL_NODES.get(state)
-        if budget is not None and first["nodes"] > budget:
-            report.append(f"note: {path.name} {state}: {first['nodes']} nodes, over the budget of {budget}")
+        if budget is not None and max(first["figNodes"], default=0) > budget:
+            report.append(f"note: {path.name} {state}: a figure of {max(first['figNodes'])} nodes, "
+                          f"over the budget of {budget}")
         for label in first["longLabels"]:
             report.append(f"note: {path.name} {state}: a label over {LABEL_WORDS} words: \"{label}\"")
         for viewport, measured in rows:

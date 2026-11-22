@@ -44,7 +44,7 @@ sentence. Two nodes are a sentence too.
 Ask of every element: **would the reader miss it if it were gone?** If not, hide it. If only
 someone one level down would, move it there. What is shown, the reader must be able to act on.
 
-| Level | Shows | Hides | Nodes, at most |
+| Level | Shows | Hides | Nodes per figure, at most |
 |---|---|---|---|
 | ELI-lambda | the promise and the path a person sees; durations a person feels | mechanisms, component names, exceptions | 9 |
 | ELI-initiate | the mechanisms that make it work; what works, what does not yet; safeguards | components, formats, file names | 12 |
@@ -52,8 +52,9 @@ someone one level down would, move it there. What is shown, the reader must be a
 
 - A node label is **8 words at most**; a sub-line adds a number or a condition, not a sentence.
 - Around the figure: one lead sentence above it, at most one short paragraph below it.
-- Over budget: merge nodes, move detail down a level, or split into two figures.
-- render.py refuses more than 15 nodes in one figure, and notes a panel over its budget.
+- Over budget: merge nodes, move detail down a level, or split into two figures, each with its own
+  message and lead sentence. A level never shows less than the one above it: what it details, it keeps.
+- render.py refuses more than 15 nodes in one figure, and notes a figure over its level's budget.
 
 ## 4. The visual grammar
 
@@ -75,11 +76,16 @@ path** (`data-tone`). Both keep the same meaning at every level of a page.
 | `sys` | the system the figure is about |
 | `key` | a second actor, or the slow or costly path |
 | `ok` | an outcome that is good or confirmed |
-| `muted` | background, outside, not yet |
+| `muted` | the outside the system acts on, background, not yet |
 
 - **The figure is its own legend**: labels sit on the nodes and the arrows, never in a key box
   apart. A path's colour is named on its answer chip ("Yes: known recipe").
 - **Colour never carries a distinction alone**: the shape, a label or a pictogram says it too.
+- **One colour per role, the same at every level**: a component keeps its colour from ELI-lambda to
+  ELI-Architect, and a label names who acts ("Sidekick poses...", "You...") so the colour is read,
+  not guessed. One pictogram per meaning: never the same icon for two things.
+- **ELI-lambda names no component**: it says what the reader lives ("you type", "an AI improvises");
+  component names and jargon start at ELI-initiate, defined where they first appear.
 - **Not austere**: soft fills, rounded shapes, a pictogram per node that has an actor, a clear
   hierarchy of sizes (title, sub-line). **Never decorative**: a colour or a shape that does not
   carry a distinction is removed.
@@ -99,7 +105,8 @@ path** (`data-tone`). Both keep the same meaning at every level of a page.
 
 1. Copy `template.html` (next to this file) to the page's place, set `<html lang>`, and replace
    every sample, the labels of the level selector included.
-2. Take each figure's markup from `forms.html`, which shows every form and every shape.
+2. Take each figure's markup from `forms.html`, which shows every form and every shape. In a
+   `map`, a link sits in the grid cell between its source and its target, in their column.
 3. Keep the contract the page and render.py rely on:
 
 | Element | Carries |
