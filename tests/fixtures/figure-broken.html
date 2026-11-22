@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Broken figure: the witness of render.py</title>
+<!--
+  Every hard defect of skills/figures/render.py, once each, in its own element.
+  tests/test_figures.py builds the clean twin of this page by replacing the style
+  #defects and the three marked attributes: the twin must render with no defect.
+-->
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#fbfaf7;color:#1d1f23;font:16px/1.4 system-ui,sans-serif}
+main{padding:16px}
+figure{margin:0 0 24px}
+p{margin:0 0 16px}
+.row{display:flex;flex-wrap:wrap;gap:8px}
+[data-node]{display:block;width:90px;padding:4px 6px;border:2px solid #1f5fbf;border-radius:8px;background:#fff;font-size:15px}
+.term{position:relative;display:inline-block;border-bottom:2px dotted currentColor}
+.term::after{content:attr(data-def);display:none;position:absolute;left:0;top:100%;width:200px;padding:6px;
+  background:#1d1f23;color:#fbfaf7;font-size:15px}
+.term:hover::after,.term:focus::after{display:block}
+/* not a defect: a long code line in a box that scrolls is reached by scrolling, not cut */
+pre{max-width:100%;overflow-x:auto;margin:0 0 16px;padding:6px;background:#efefed;font-size:15px}
+</style>
+<style id="defects">
+.wide{width:calc(100% + 40px)}
+.clip{width:120px;overflow:hidden;white-space:nowrap}
+.off{margin-left:-60px}
+.spill{white-space:nowrap}
+.over{margin-left:-40px}
+.tiny{font-size:13px}
+.extra{display:block}
+.term:hover::after,.term:focus::after{display:none}
+</style>
+</head>
+<body>
+<main>
+  <div class="wide">hscroll: this strip is wider than the window</div>
+  <p class="clip">text-cut: this sentence is too long for its box</p>
+  <p class="off">text-cut: this line starts left of the window</p>
+  <figure data-figure="chain" id="spilling" class="row">
+    <div data-node="action" class="spill">spill: a label wider than its node</div>
+  </figure>
+  <figure data-figure="chain" id="overlapping" class="row">
+    <div data-node="action">overlap A</div>
+    <div data-node="action" class="over">overlap B</div>
+  </figure>
+  <p class="tiny">small-text: thirteen pixels</p>
+  <figure data-figure="chain" id="many" class="row">
+    <div data-node="action">n1</div><div data-node="action">n2</div><div data-node="action">n3</div>
+    <div data-node="action">n4</div><div data-node="action">n5</div><div data-node="action">n6</div>
+    <div data-node="action">n7</div><div data-node="action">n8</div><div data-node="action">n9</div>
+    <div data-node="action">n10</div><div data-node="action">n11</div><div data-node="action">n12</div>
+    <div data-node="action">n13</div><div data-node="action">n14</div><div data-node="action">n15</div>
+    <div data-node="action" class="extra">n16</div>
+  </figure>
+  <figure data-figure="flowchart" id="contract" class="row">
+    <div data-node="widget">contract</div>
+    <svg viewBox="0 0 120 24" width="120" height="24"><text x="0" y="18" font-size="16">svg text</text></svg>
+  </figure>
+  <pre><code>no defect: render.py --out /a/folder/that/is/long --and --a --line --that --goes --far --beyond --the --width --of --a --phone --and --of --a --wide --screen --too --until --it --scrolls</code></pre>
+  <p>term-hidden: a <span class="term" tabindex="0" data-def="A definition that must show.">term</span> here</p>
+</main>
+</body>
+</html>

@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tuning a guitar string</title>
+<!--
+  ELI figure template: the eli:figures skill (skills/figures/SKILL.md of the eli plugin).
+  One subject, two or three levels, one visible at a time: data-eli="lambda|initiate|architect",
+  id="eli-<level>". Replace every sample; take each figure's markup from forms.html.
+  Keep the CSS between the eli-figures markers byte for byte: other pages share it.
+-->
+<style>
+/* eli-figures:start */
+/* The visual language of eli figures. A SHAPE says what sort of thing a node is
+   (data-node); a COLOUR says who acts, or which path (data-tone). Same meaning at
+   every level of a page. Copy this block unchanged. */
+:root{
+  --bg:#fbfaf7; --fg:#1d1f23; --muted:#5d636d; --line:#d9d6cf; --card:#ffffff; --soft:#efefed;
+  --you:#c2410c; --you-bg:#fdeee4; --sys:#1f5fbf; --sys-bg:#e2ecfb;
+  --key:#7c3aed; --key-bg:#efe7fd; --ok:#1f8a4c; --ok-bg:#e3f4ea;
+  --on-accent:#ffffff;
+  --fig-shadow:0 1px 2px rgba(0,0,0,.05), 0 6px 18px rgba(0,0,0,.06);
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#16181c; --fg:#e8e6e1; --muted:#a3a8b1; --line:#3a3e45; --card:#1f2228; --soft:#2a2d33;
+    --you:#f59e5b; --you-bg:#3a2414; --sys:#6ea3f5; --sys-bg:#172741;
+    --key:#b394f7; --key-bg:#2a1f45; --ok:#4cc982; --ok-bg:#16301f;
+    --on-accent:#16181c;
+    --fig-shadow:0 1px 2px rgba(0,0,0,.4), 0 6px 18px rgba(0,0,0,.3);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#16181c; --fg:#e8e6e1; --muted:#a3a8b1; --line:#3a3e45; --card:#1f2228; --soft:#2a2d33;
+  --you:#f59e5b; --you-bg:#3a2414; --sys:#6ea3f5; --sys-bg:#172741;
+  --key:#b394f7; --key-bg:#2a1f45; --ok:#4cc982; --ok-bg:#16301f;
+  --on-accent:#16181c;
+  --fig-shadow:0 1px 2px rgba(0,0,0,.4), 0 6px 18px rgba(0,0,0,.3);
+  color-scheme:dark;
+}
+
+/* Colour: who acts, or which path */
+figure[data-figure]{--tone:var(--muted);--tone-bg:var(--soft);--fig-bg:var(--bg);margin:0;container:fig / inline-size;
+  font-size:16px;line-height:1.35;color:var(--fg)}
+figure[data-figure],figure[data-figure] *,figure[data-figure] *::before,figure[data-figure] *::after,.term::after{box-sizing:border-box}
+[data-tone="you"]{--tone:var(--you);--tone-bg:var(--you-bg)}
+[data-tone="sys"]{--tone:var(--sys);--tone-bg:var(--sys-bg)}
+[data-tone="key"]{--tone:var(--key);--tone-bg:var(--key-bg)}
+[data-tone="ok"]{--tone:var(--ok);--tone-bg:var(--ok-bg)}
+[data-tone="muted"]{--tone:var(--muted);--tone-bg:var(--soft)}
+figure[data-figure] > figcaption{margin:0 0 14px;font-size:15px;color:var(--muted)}
+.f-key{display:inline-flex;align-items:center;gap:6px;margin-right:12px;white-space:nowrap}
+.f-key::before{content:"";width:12px;height:12px;border-radius:50%;background:var(--tone)}
+
+/* Shape: what sort of thing a node is */
+[data-node]{position:relative;display:flex;align-items:center;gap:10px;min-width:0;margin:0;padding:10px 14px;
+  border:2px solid var(--tone);border-radius:14px;background:var(--card);color:var(--fg);box-shadow:var(--fig-shadow);
+  text-align:left;overflow-wrap:break-word}
+[data-node]:has(.term:is(:hover,:focus)){z-index:30}
+.f-txt{display:flex;flex-direction:column;gap:3px;min-width:0}
+.f-t{font-weight:700;font-size:16px;line-height:1.3}
+.f-s{font-size:14.5px;line-height:1.35;color:var(--muted)}
+.f-ico{flex:none;width:36px;height:36px;padding:7px;border-radius:50%;background:var(--tone-bg);
+  fill:none;stroke:var(--tone);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+/* action: something done, a step */
+[data-node="action"]{border-radius:14px}
+/* question: a choice that opens paths */
+[data-node="question"]{border:0;background:none;box-shadow:none;isolation:isolate;padding:12px 34px;
+  justify-content:center;text-align:center}
+[data-node="question"]::before,[data-node="question"]::after{content:"";position:absolute;z-index:-1;
+  clip-path:polygon(24px 0,calc(100% - 24px) 0,100% 50%,calc(100% - 24px) 100%,24px 100%,0 50%)}
+[data-node="question"]::before{inset:0;background:var(--tone)}
+[data-node="question"]::after{inset:2.5px;background:var(--tone-bg)}
+[data-node="question"] .f-ico{background:var(--card)}
+/* store: what is kept */
+[data-node="store"]{border-radius:50% / 16px;padding-top:36px;background:var(--tone-bg)}
+[data-node="store"]::before{content:"";position:absolute;left:-2px;right:-2px;top:-2px;height:32px;
+  border:2px solid var(--tone);border-radius:50%;background:var(--card)}
+[data-node="store"] > *{position:relative}
+/* result: what the reader gets */
+[data-node="result"]{border-radius:28px;background:var(--tone);color:var(--on-accent);padding:9px 20px 9px 10px}
+[data-node="result"] .f-s{color:var(--on-accent);opacity:.92}
+[data-node="result"] .f-ico{background:var(--card);stroke:var(--tone)}
+/* actor: who acts */
+[data-node="actor"]{border:0;background:none;box-shadow:none;padding:4px 6px}
+[data-node="actor"] .f-ico{width:46px;height:46px;padding:10px;background:var(--tone);stroke:var(--on-accent)}
+/* note: an aside, a safeguard, a limit */
+[data-node="note"]{border-style:dashed;background:transparent;box-shadow:none;border-radius:10px}
+[data-node="note"] .f-ico{width:30px;height:30px;padding:5px}
+
+/* Small labels: a duration, a condition */
+.f-chip{display:inline-flex;align-items:center;gap:5px;width:fit-content;max-width:100%;font-size:14px;
+  font-weight:650;line-height:1.25;border-radius:999px;padding:3px 10px;background:var(--tone-bg);color:var(--tone)}
+[data-node="result"] .f-chip{background:var(--card)}
+
+/* Connector: an arrow between two nodes, with an optional label */
+.f-to{flex:none;display:flex;align-items:center;justify-content:center;min-width:44px;padding:0 4px;
+  color:var(--tone);font-size:14px;font-weight:650;line-height:1.25;text-align:center}
+.f-to::before{content:"";flex:1 1 10px;min-width:10px;height:3px;border-radius:2px;background:currentColor}
+.f-to::after{content:"";flex:none;width:0;height:0;margin-left:-2px;border-left:11px solid currentColor;
+  border-top:7px solid transparent;border-bottom:7px solid transparent}
+.f-to > span{padding:0 6px;color:var(--fg);font-weight:600}
+.f-down > .f-to,.f-to.f-v{flex-direction:column;min-width:0;min-height:38px;padding:3px 0}
+.f-down > .f-to::before,.f-to.f-v::before{flex:1 1 10px;width:3px;min-width:0;height:auto;min-height:10px}
+.f-down > .f-to::after,.f-to.f-v::after{margin:-2px 0 0;border-top:11px solid currentColor;border-bottom:0;
+  border-left:7px solid transparent;border-right:7px solid transparent}
+.f-down > .f-to > span,.f-to.f-v > span{padding:3px 0}
+
+/* chain: steps in order */
+.f-chain{list-style:none;margin:0;padding:0;display:flex;align-items:stretch}
+.f-chain > [data-node]{flex:1 1 0}
+.f-chain > .f-to{align-self:center}
+.f-chain.f-down{flex-direction:column;align-items:stretch}
+.f-chain.f-down > [data-node]{flex:none}
+.f-chain.f-down > .f-to{align-self:flex-start;margin-left:28px}
+
+/* branch: a question and its paths, drawn as a tree */
+.f-branch{display:flex;flex-direction:column;align-items:flex-start}
+.f-branch > [data-node],.f-branch > .f-chain{width:fit-content;max-width:100%}
+.f-branch > .f-chain{flex-direction:column;align-items:flex-start}
+.f-branch > .f-chain > [data-node]{flex:none;max-width:100%}
+.f-branch > .f-to,.f-branch > .f-chain > .f-to{align-self:flex-start;margin-left:28px}
+.f-paths{list-style:none;margin:0;padding:0 0 0 28px;display:flex;flex-direction:column;gap:0;width:100%}
+.f-path{position:relative;display:flex;align-items:center;gap:0;padding:12px 0 12px 30px}
+.f-path::before{content:"";position:absolute;left:-1.5px;top:0;bottom:0;border-left:3px solid var(--line)}
+.f-path:last-child::before{bottom:50%;border-bottom:3px solid var(--line);border-bottom-left-radius:14px;width:24px}
+.f-path:not(:last-child)::after{content:"";position:absolute;left:0;top:50%;width:24px;border-top:3px solid var(--line)}
+.f-path > .f-ans{flex:none;align-self:center;max-width:220px}
+.f-path > .f-chain{flex:0 1 auto;min-width:0}
+.f-path > .f-chain > [data-node]{flex:0 1 auto}
+.f-ans{display:inline-flex;flex-direction:column;align-items:flex-start;gap:1px;border-radius:12px;padding:6px 12px;
+  background:var(--tone);color:var(--on-accent);font-size:15px;font-weight:800;line-height:1.2}
+.f-ans small{font-size:14px;font-weight:600;opacity:.95}
+
+/* cycle: a loop that comes back to its start */
+.f-cycle{position:relative;padding-bottom:64px}
+.f-back{position:absolute;margin:0;left:34px;right:34px;bottom:0;height:46px;display:flex;align-items:flex-end;justify-content:center;
+  border:3px solid var(--tone);border-top:0;border-radius:0 0 22px 22px;color:var(--tone)}
+.f-back::before{content:"";position:absolute;left:-10px;top:-14px;border-left:8.5px solid transparent;
+  border-right:8.5px solid transparent;border-bottom:14px solid currentColor}
+.f-back > span{position:relative;top:50%;max-width:calc(100% - 40px);padding:3px 12px;border-radius:999px;
+  background:var(--tone-bg);color:var(--fg);font-size:15px;font-weight:650;line-height:1.3;text-align:center}
+
+/* lanes: who does what, in order (time runs down; one column per actor) */
+.f-heads,.f-lanes{display:grid;grid-template-columns:repeat(var(--lanes,3),minmax(0,1fr))}
+.f-heads{margin-bottom:6px}
+.f-heads > [data-node]{justify-self:center;flex-direction:column;gap:6px;text-align:center;max-width:calc(100% - 8px)}
+.f-lanes{row-gap:12px;padding:6px 0 10px;
+  background-image:linear-gradient(to right,transparent calc(50% - 1px),var(--line) calc(50% - 1px),var(--line) calc(50% + 1px),transparent calc(50% + 1px));
+  background-size:calc(100% / var(--lanes,3)) 100%;background-repeat:repeat-x}
+.f-lanes > [data-node]{grid-column:var(--lane);justify-self:center;max-width:calc(100% - 12px)}
+.f-msg{grid-column:var(--a) / calc(var(--b) + 1);position:relative;display:flex;flex-direction:column;align-items:center;
+  padding:0 calc(50% / (var(--b) - var(--a) + 1));color:var(--tone)}
+.f-msg > span{max-width:100%;margin-bottom:5px;padding:1px 8px;border-radius:6px;background:var(--fig-bg);color:var(--fg);
+  font-size:15px;line-height:1.3;text-align:center}
+.f-msg::before{content:"";order:1;align-self:stretch;height:3px;border-radius:2px;background:currentColor}
+.f-msg::after{content:"";position:absolute;bottom:-5.5px;right:calc(50% / (var(--b) - var(--a) + 1) - 2px);
+  border-left:12px solid currentColor;border-top:7px solid transparent;border-bottom:7px solid transparent}
+.f-msg[data-dir="left"]::after{right:auto;left:calc(50% / (var(--b) - var(--a) + 1) - 2px);border-left:0;
+  border-right:12px solid currentColor}
+.f-msg .f-ends{display:none}
+.f-frame{grid-column:1 / -1;margin:8px 0 0;padding:6px 12px;border-radius:10px;border-left:6px solid var(--tone);
+  background:var(--tone-bg);font-size:15px;font-weight:750;color:var(--fg)}
+
+/* map: components and their flows (rows of components, links between rows) */
+.f-map{display:grid;grid-template-columns:repeat(var(--cols,3),minmax(0,1fr));column-gap:28px;align-items:center}
+.f-map > [data-node]{grid-column:var(--c,auto);grid-row:var(--r,auto);justify-self:center;max-width:100%}
+.f-link{grid-column:var(--c,auto);grid-row:var(--r,auto);display:flex;align-items:center;gap:8px;min-height:52px;
+  padding:4px 0 4px calc(50% - 1.5px);color:var(--tone);font-size:14px;font-weight:650;line-height:1.25}
+.f-link::before{content:"";flex:none;align-self:stretch;width:3px;border-radius:2px;background:currentColor}
+.f-link > span{position:relative;color:var(--fg);font-weight:600}
+.f-link > span::before{content:"";position:absolute;left:-15.5px;bottom:-6px;border-left:7px solid transparent;
+  border-right:7px solid transparent;border-top:11px solid var(--tone)}
+.f-link[data-dir="up"] > span::before{bottom:auto;top:-6px;border-top:0;border-bottom:11px solid var(--tone)}
+
+/* notes: asides under a figure (a safeguard, a limit), one note node each */
+.f-notes{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+.f-notes > [data-node]{flex:1 1 260px}
+
+/* Narrow figures (a phone, a zoom): every form reads top to bottom */
+@container fig (max-width: 640px){
+  .f-chain:not(.f-down){flex-direction:column}
+  .f-chain:not(.f-down) > [data-node]{flex:none}
+  .f-chain:not(.f-down) > .f-to{align-self:flex-start;margin-left:28px;flex-direction:column;min-width:0;min-height:38px;padding:3px 0}
+  .f-chain:not(.f-down) > .f-to::before{width:3px;min-width:0;height:auto;min-height:10px}
+  .f-chain:not(.f-down) > .f-to::after{margin:-2px 0 0;border-top:11px solid currentColor;border-bottom:0;
+    border-left:7px solid transparent;border-right:7px solid transparent}
+  .f-chain:not(.f-down) > .f-to > span{padding:3px 0}
+  .f-path{flex-direction:column;align-items:flex-start;padding:12px 0 12px 26px}
+  .f-path::after,.f-path:last-child::before{width:20px}
+  .f-path > .f-chain{width:100%}
+  .f-path > .f-ans{max-width:100%;align-self:flex-start}
+  .f-path:last-child::before{bottom:auto;height:30px}
+  .f-path:not(:last-child)::after{top:30px}
+  .f-cycle{padding:0 0 46px 34px}
+  .f-back{left:0;right:auto;top:30px;bottom:16px;height:auto;width:24px;border:3px solid var(--tone);border-right:0;
+    border-radius:16px 0 0 16px}
+  .f-back::before{left:auto;right:-6px;top:-9.5px;border:0;border-top:8px solid transparent;border-bottom:8px solid transparent;
+    border-left:13px solid currentColor}
+  .f-back > span{position:absolute;top:auto;left:30px;bottom:-1.5px;translate:0 50%;width:max-content;max-width:calc(100cqw - 34px)}
+  .f-heads{display:flex;flex-wrap:wrap;gap:4px 10px}
+  .f-heads > [data-node]{flex-direction:row;text-align:left}
+  .f-lanes{grid-template-columns:minmax(0,1fr);background:none;row-gap:8px}
+  .f-lanes > [data-node]{grid-column:1;justify-self:start;max-width:100%}
+  .f-msg{grid-column:1;padding:6px 10px 6px 12px;align-items:flex-start;border-left:4px solid currentColor;
+    border-radius:0 10px 10px 0;background:var(--tone-bg)}
+  .f-msg::before,.f-msg::after{display:none}
+  .f-msg > span{margin:0;padding:0;background:none;text-align:left}
+  .f-msg .f-ends{display:block;font-size:14px;font-weight:750;color:var(--tone)}
+  .f-map{grid-template-columns:minmax(0,1fr)}
+  .f-map > [data-node],.f-map > .f-link{grid-column:1;grid-row:auto}
+  .f-link{padding-left:26px}
+}
+
+/* A term: the word stays in the sentence; its definition shows on hover, keyboard focus or a tap */
+.term{position:relative;display:inline-block;border-bottom:2px dotted currentColor;cursor:help;border-radius:2px}
+.term:focus{outline:none}
+.term:focus-visible{outline:2px solid var(--sys);outline-offset:2px}
+.term::after{content:attr(data-def);display:none;position:absolute;z-index:40;left:var(--tip-x,0px);top:calc(100% + 8px);
+  width:max-content;max-width:min(300px,calc(100vw - 32px));padding:8px 11px;border-radius:10px;
+  background:var(--fg);color:var(--bg);box-shadow:var(--fig-shadow);font-size:15px;font-weight:500;font-style:normal;
+  line-height:1.4;text-align:left;white-space:normal;letter-spacing:0;text-transform:none}
+.term:hover::after,.term:focus::after{display:block}
+/* eli-figures:end */
+
+/* ---------- The page of a figure: title, TL;DR, level selector, one panel at a time ---------- */
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:1240px;margin:0 auto;padding:40px 24px 56px}
+h1{margin:0;font-size:40px;line-height:1.1;font-weight:800;letter-spacing:-.02em}
+.tldr{margin:18px 0 0;max-width:80ch;padding:12px 16px;border-radius:12px;background:var(--card);
+  border:1px solid var(--line);border-left:6px solid var(--sys);font-size:18px}
+.tldr b{color:var(--sys);font-size:14px;letter-spacing:.06em;margin-right:6px}
+.levels{display:flex;flex-wrap:wrap;gap:8px;margin:22px 0 26px;padding:0;list-style:none}
+.levels a{display:inline-flex;align-items:baseline;gap:8px;padding:8px 14px;border-radius:999px;border:2px solid var(--line);
+  background:var(--card);color:var(--fg);text-decoration:none;font-size:15px;line-height:1.3}
+.levels a b{font-weight:800}
+.levels a:hover{border-color:var(--muted)}
+.levels a:focus-visible{outline:3px solid var(--sys);outline-offset:2px}
+.levels a[aria-current="true"]{background:var(--fg);border-color:var(--fg);color:var(--bg)}
+.lead{margin:0 0 20px;max-width:80ch;font-size:18px;color:var(--muted)}
+.lead b{color:var(--fg)}
+.after{margin:22px 0 0;max-width:80ch;font-size:16px;color:var(--muted)}
+@media (max-width:680px){
+  main{padding:24px 16px 40px}
+  h1{font-size:30px}
+  .tldr{font-size:17px}
+}
+</style>
+</head>
+<body>
+<main>
+  <h1>Tuning a guitar string</h1>
+  <p class="tldr" data-tldr><b>TL;DR</b>You pluck the string, the tuner says whether it is too low or too high, and you turn the peg until it shows green.</p>
+  <nav aria-label="Level of detail">
+    <ul class="levels">
+      <li><a href="#eli-lambda"><b>ELI-lambda</b>the essentials</a></li>
+      <li><a href="#eli-initiate"><b>ELI-initiate</b>how it knows</a></li>
+      <li><a href="#eli-architect"><b>ELI-Architect</b>how it is built</a></li>
+    </ul>
+  </nav>
+
+  <section class="panel" data-eli="lambda" id="eli-lambda" data-open aria-label="ELI-lambda">
+    <p class="lead">Four gestures, repeated <b>until the string is in tune</b>.</p>
+    <figure data-figure="cycle" aria-label="The tuning loop">
+      <div class="f-cycle">
+        <ol class="f-chain">
+          <li data-node="action" data-tone="you"><svg class="f-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11V5a1.5 1.5 0 0 1 3 0v5M10 10V3.5a1.5 1.5 0 0 1 3 0V10M13 10V5a1.5 1.5 0 0 1 3 0v6M16 9a1.5 1.5 0 0 1 3 0v5a7 7 0 0 1-12.5 4.3L4 14.5a1.5 1.5 0 0 1 2.4-1.8L7 13.5"/></svg>
+            <span class="f-txt"><span class="f-t">You pluck the string</span></span></li>
+          <li class="f-to" aria-hidden="true"></li>
+          <li data-node="action" data-tone="sys"><svg class="f-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h3l2-6 4 12 4-9 2 3h3"/></svg>
+            <span class="f-txt"><span class="f-t">The tuner listens</span></span></li>
+          <li class="f-to" aria-hidden="true"></li>
+          <li data-node="result" data-tone="sys"><svg class="f-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17a8 8 0 0 1 16 0M12 17l4-6"/></svg>
+            <span class="f-txt"><span class="f-t">It shows: too low, in tune, too high</span></span></li>
+          <li class="f-to" aria-hidden="true"></li>
+          <li data-node="action" data-tone="you"><svg class="f-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-3-6.2M20 4v5h-5"/></svg>
+            <span class="f-txt"><span class="f-t">You turn the peg</span></span></li>
+        </ol>
+        <p class="f-back" data-tone="you"><span>again, until it shows green</span></p>
+      </div>
+    </figure>
+  </section>
+
+  <section class="panel" data-eli="initiate" id="eli-initiate" aria-label="ELI-initiate">
+    <p class="lead">The tuner measures how fast the string vibrates and <b>compares it with the nearest note</b>.</p>
+    <figure data-figure="branch" aria-label="How the tuner decides what to show">
+      <div class="f-branch">
+        <ol class="f-chain f-down">
+          <li data-node="action" data-tone="you"><svg class="f-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11V5a1.5 1.5 0 0 1 3 0v5M10 10V3.5a1.5 1.5 0 0 1 3 0V10M13 10V5a1.5 1.5 0 0 1 3 0v6M16 9a1.5 1.5 0 0 1 3 0v5a7 7 0 0 1-12.5 4.3L4 14.5a1.5 1.5 0 0 1 2.4-1.8L7 13.5"/></svg>
+            <span class="f-txt"><span class="f-t">You pluck the string</span></span></li>
+          <li class="f-to" aria-hidden="true"></li>
+          <li data-node="action" data-tone="sys"><svg class="f-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a3 3 0 0 1 3 3v5a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3zM6 11a6 6 0 0 0 12 0M12 17v4"/></svg>
+            <span class="f-txt"><span class="f-t">The microphone picks up the sound</span></span></li>
+          <li class="f-to" aria-hidden="true"></li>
+          <li data-node="action" data-tone="sys"><svg class="f-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h3l2-6 4 12 4-9 2 3h3"/></svg>
+            <span class="f-txt"><span class="f-t">It finds the <span class="term" tabindex="0" data-def="How many times per second the whole string vibrates: the note you hear.">fundamental frequency</span></span></span></li>
+        </ol>
+        <div class="f-to f-v" aria-hidden="true"></div>
+        <div data-node="question" data-tone="sys"><svg class="f-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5v.01"/></svg>
+          <span class="f-txt"><span class="f-t">How far from the nearest note, in <span class="term" tabindex="0" data-def="Hundredths of a semitone: 100 cents from one note to the next.">cents</span>?</span></span></div>
+        <ul class="f-paths">
+          <li class="f-path" data-tone="you"><span class="f-ans">Too low<small>over 5 cents under</small></span>
+            <ol class="f-chain"><li class="f-to" aria-hidden="true"></li>
+              <li data-node="action"><svg class="f-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg>
+                <span class="f-txt"><span class="f-t">You tighten the string</span><span class="f-s">and pluck again</span></span></li></ol></li>
+          <li class="f-path" data-tone="ok"><span class="f-ans">In tune<small>within 5 cents</small></span>
+            <ol class="f-chain"><li class="f-to" aria-hidden="true"></li>
+              <li data-node="result"><svg class="f-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg>
+                <span class="f-txt"><span class="f-t">Green: the string is in tune</span></span></li></ol></li>
+          <li class="f-path" data-tone="you"><span class="f-ans">Too high<small>over 5 cents above</small></span>
+            <ol class="f-chain"><li class="f-to" aria-hidden="true"></li>
+              <li data-node="action"><svg class="f-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg>
+                <span class="f-txt"><span class="f-t">You loosen the string</span><span class="f-s">and pluck again</span></span></li></ol></li>
+        </ul>
+      </div>
+    </figure>
+    <p class="after">Not great yet: the low string vibrates slowly, so the tuner needs more listening before its answer holds still.</p>
+  </section>
+
+  <section class="panel" data-eli="architect" id="eli-architect" aria-label="ELI-Architect">
+    <p class="lead">Three parts pass the sound along; <b>the needle must move within 100 ms of the note</b>.</p>
+    <figure data-figure="lanes" aria-label="Who does what, from the sound to the needle">
+      <div class="f-heads" style="--lanes:4">
+        <div data-node="actor" data-tone="you"><svg class="f-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a3 3 0 0 1 3 3v5a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3zM6 11a6 6 0 0 0 12 0M12 17v4"/></svg><span class="f-t">Microphone</span></div>
+        <div data-node="actor" data-tone="sys"><svg class="f-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h3l2-6 4 12 4-9 2 3h3"/></svg><span class="f-t">Audio thread</span></div>
+        <div data-node="actor" data-tone="key"><svg class="f-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h10v10H7zM10 3v4M14 3v4M10 17v4M14 17v4M3 10h4M3 14h4M17 10h4M17 14h4"/></svg><span class="f-t">Pitch detector</span></div>
+        <div data-node="actor" data-tone="ok"><svg class="f-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17a8 8 0 0 1 16 0M12 17l4-6"/></svg><span class="f-t">Display</span></div>
+      </div>
+      <div class="f-lanes" style="--lanes:4">
+        <div class="f-msg" data-tone="you" style="--a:1;--b:2"><span><b class="f-ends">Microphone → audio thread</b>the sound, in 40 ms blocks</span></div>
+        <div class="f-msg" data-tone="sys" style="--a:2;--b:3"><span><b class="f-ends">Audio thread → detector</b>one block at a time, on its own thread</span></div>
+        <div data-node="action" data-tone="key" style="--lane:3"><span class="f-txt"><span class="f-t"><span class="term" tabindex="0" data-def="Compare the sound with a shifted copy of itself: the shift where they match best is one vibration.">Autocorrelation</span> finds the period</span></span></div>
+        <div class="f-msg" data-tone="key" style="--a:3;--b:4"><span><b class="f-ends">Detector → display</b>the note and the gap, averaged over 3 blocks</span></div>
+        <div data-node="result" data-tone="ok" style="--lane:4"><span class="f-txt"><span class="f-t">The needle moves</span><span class="f-s">under 100 ms</span></span></div>
+      </div>
+    </figure>
+    <p class="after">Trade-off: a longer block makes the low E reliable but slows the answer.</p>
+  </section>
+</main>
+<script>
+(function () {
+  "use strict";
+  // One level visible at a time: #eli-<level> in the URL, else the panel with data-open, else the first.
+  var panels = Array.prototype.slice.call(document.querySelectorAll('[data-eli][id^="eli-"]'));
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('a[href^="#eli-"]'));
+  function current() {
+    var aimed = document.getElementById(decodeURIComponent(location.hash.slice(1)));
+    var panel = aimed && aimed.closest('[data-eli][id^="eli-"]');
+    return panel || document.querySelector('[data-eli][id^="eli-"][data-open]') || panels[0];
+  }
+  function show() {
+    var shown = current();
+    panels.forEach(function (p) { p.hidden = p !== shown; });
+    tabs.forEach(function (t) { t.setAttribute("aria-current", String(t.getAttribute("href") === "#" + shown.id)); });
+  }
+  tabs.forEach(function (t) {
+    t.addEventListener("click", function (e) {
+      e.preventDefault();
+      if (history.replaceState) history.replaceState(null, "", t.getAttribute("href"));
+      show();
+    });
+  });
+  window.addEventListener("hashchange", show);
+  show();
+  // A term's definition stays inside the screen; a tap gives it the focus that shows it.
+  function place(term) {
+    var r = term.getBoundingClientRect(), w = Math.min(300, window.innerWidth - 32);
+    var shift = Math.min(0, window.innerWidth - 16 - (r.left + w));
+    if (r.left + shift < 16) shift = 16 - r.left;
+    term.style.setProperty("--tip-x", shift + "px");
+  }
+  document.querySelectorAll(".term").forEach(function (term) {
+    ["mouseenter", "focus"].forEach(function (type) { term.addEventListener(type, function () { place(term); }); });
+    term.addEventListener("click", function () { term.focus(); });
+  });
+})();
+</script>
+</body>
+</html>

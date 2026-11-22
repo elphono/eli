@@ -193,10 +193,12 @@ def test_the_marketplace_lists_the_plugin_at_the_root():
     assert [(p["name"], p["source"]) for p in market["plugins"]] == [(plugin["name"], "./")]
 
 
-SHIPPED = [STYLE, SKILL, TEMPLATE, HOOK, REPO / "README.md"]
+FIGURES = REPO / "skills" / "figures"
+SHIPPED = [STYLE, SKILL, TEMPLATE, HOOK, REPO / "README.md", FIGURES / "SKILL.md", FIGURES / "template.html",
+           FIGURES / "forms.html", FIGURES / "render.py"]
 
 
-@pytest.mark.parametrize("path", SHIPPED, ids=lambda p: p.name)
+@pytest.mark.parametrize("path", SHIPPED, ids=lambda p: p.relative_to(REPO).as_posix())
 def test_what_ships_is_generic(path):
     """The plugin was extracted from one person's setup: no first name, no private path, no
     French left over from the original (the hook still accepts the French exemption word)."""
