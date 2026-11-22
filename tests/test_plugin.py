@@ -288,3 +288,15 @@ def test_what_ships_is_generic(path):
     allowed = {"ée"} if path == HOOK else set()   # the d[ée]rogation pattern
     leftovers = {w for w in re.findall(r"\w*[éèàêçùô]\w*", text, re.IGNORECASE)} - allowed
     assert not leftovers, leftovers
+
+
+def test_eval_scaffold_copies_are_identical():
+    """claude plugin eval refuses a scaffold reached through a link or a path out of its case,
+    so every case that selects the eli style carries its own copy of select-eli-style.sh:
+    the copies must not drift apart."""
+    cases = sorted(p.parent for p in (REPO / "evals").glob("*/case.yaml")
+                   if "scaffold_script: select-eli-style.sh" in p.read_text(encoding="utf-8"))
+    assert len(cases) >= 3, cases
+    copies = {case.name: (case / "select-eli-style.sh").read_bytes() for case in cases}
+    first = next(iter(copies.values()))
+    assert {name for name, data in copies.items() if data != first} == set()

@@ -59,7 +59,7 @@ une demande de dessin donne une page de figure sous `docs/`, jamais un dessin AS
 (`closed-question`, le témoin). Chaque cas tourne avec et sans le plugin ; l'écart est la mesure.
 
 ```bash
-UV_LINK_MODE=copy uv sync --locked --reinstall   # l'outil refuse un plugin qui contient des liens physiques, et uv en pose dans .venv
+uv sync --locked   # pyproject.toml impose link-mode = "copy" : l'outil refuse un plugin qui contient des liens physiques ; un .venv plus ancien se refait par uv sync --locked --reinstall
 claude plugin eval . --no-publish --trust-plugin --scaffold --allow-tools Write Edit -j 6 --json /tmp/eli-eval.json
 ```
 
@@ -67,8 +67,9 @@ claude plugin eval . --no-publish --trust-plugin --scaffold --allow-tools Write 
   `evals/results/`, ignoré par git.
 - `--scaffold` lance `select-eli-style.sh` de chaque cas, qui choisit le style `eli:eli` dans les
   réglages utilisateur du run, comme l'étape 2 de l'installation : sans lui, l'outil démarre en
-  style `default`, et le grader `style-active` tombe. Les trois copies du script sont identiques :
-  l'outil refuse un lien symbolique ou un chemin hors du cas.
+  style `default`, et le grader `style-active` tombe. Les trois copies du script sont identiques
+  (`test_eval_scaffold_copies_are_identical`) : l'outil refuse un lien symbolique ou un chemin hors
+  du cas.
 - **Pas de Bash dans les cas** : quand Bash est accordé, l'outil crée lui-même `settings.json`
   en exclusif, et le style ne peut plus être choisi. Le rendu par `render.py` n'est donc pas
   exercé par la suite.
