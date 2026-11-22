@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: draw-on-request
+context:
+  scaffold_script: select-eli-style.sh

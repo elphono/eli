@@ -272,8 +272,10 @@ def test_the_marketplace_lists_the_plugin_at_the_root():
 
 
 FIGURES = REPO / "skills" / "figures"
+EVALS = sorted(p for p in (REPO / "evals").rglob("*")
+               if p.is_file() and "results" not in p.relative_to(REPO / "evals").parts)
 SHIPPED = [STYLE, SKILL, TEMPLATE, HOOK, REPO / "README.md", FIGURES / "SKILL.md", FIGURES / "template.html",
-           FIGURES / "forms.html", FIGURES / "render.py"]
+           FIGURES / "forms.html", FIGURES / "render.py", *EVALS]
 
 
 @pytest.mark.parametrize("path", SHIPPED, ids=lambda p: p.relative_to(REPO).as_posix())

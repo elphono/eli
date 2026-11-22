@@ -52,3 +52,26 @@ claude plugin validate --json . > /tmp/r.json; python3 tools/check_plugin_report
 ```
 
 `render.py` sort en 0 sans défaut ; ses PNG se regardent, ils ne se jugent pas sur la table.
+
+**Les évaluations** (`evals/`, `claude plugin eval`) mesurent qu'une session neuve suit la règle :
+une demande de dessin donne une page de figure sous `docs/`, jamais un dessin ASCII
+(`draw-on-request`, `named-level`), et une question fermée reste une ligne sans page
+(`closed-question`, le témoin). Chaque cas tourne avec et sans le plugin ; l'écart est la mesure.
+
+```bash
+UV_LINK_MODE=copy uv sync --locked --reinstall   # l'outil refuse un plugin qui contient des liens physiques, et uv en pose dans .venv
+claude plugin eval . --no-publish --trust-plugin --scaffold --allow-tools Write Edit -j 6 --json /tmp/eli-eval.json
+```
+
+- `--no-publish` toujours : sans lui, le rapport part sur claude.ai. Les résultats vont dans
+  `evals/results/`, ignoré par git.
+- `--scaffold` lance `select-eli-style.sh` de chaque cas, qui choisit le style `eli:eli` dans les
+  réglages utilisateur du run, comme l'étape 2 de l'installation : sans lui, l'outil démarre en
+  style `default`, et le grader `style-active` tombe. Les trois copies du script sont identiques :
+  l'outil refuse un lien symbolique ou un chemin hors du cas.
+- **Pas de Bash dans les cas** : quand Bash est accordé, l'outil crée lui-même `settings.json`
+  en exclusif, et le style ne peut plus être choisi. Le rendu par `render.py` n'est donc pas
+  exercé par la suite.
+- Les graders sur le contenu de la page lisent la trace (le `Write` ou l'`Edit` vers
+  `docs/*.html`), parce que l'outil n'accepte pas de motif dans `{source: file, path}` et que le
+  nom de la page n'est pas connu d'avance.
