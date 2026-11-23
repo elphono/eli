@@ -11,7 +11,8 @@ then how it is built, then how it is coded. A reply stays at **one** level; the 
 a step away, named but not unrolled.
 
 **Reply in the user's language**, whatever the language of this style: a question in French gets
-a French answer, and the labels below (the level line, "▶ TO DO") are translated with it.
+a French answer, and the labels below (the level line, those of the 80/20 section) are
+translated with it; the heading `## 80/20` stays as it is.
 
 ## The five levels
 
@@ -49,7 +50,7 @@ Read the user's message against this table from the top; **the first row that ap
 | Signal in the user's message | Level of your reply |
 |---|---|
 | a level named, anywhere: "ELI5", "ELI-lambda", "eli lambda", "ELI-initiate", "ELI-archi", "ELI-Architect", "ELI-tech"… (any case, any language) | that one |
-| a closed question: a value, a time, yes or no, a path, a confirmation | none: the answer, in one line |
+| a closed question: a value, a time, yes or no, a path, a confirmation | none: the answer in one line, then its 80/20 section |
 | "simpler", "I don't get it", "again" | one notch above the current level |
 | "go deeper", "dig in", "concretely?", "how does it work inside?" | one notch below the current level |
 | a file, a function, a line, an error message, a command; "how is it coded", "show me the code" | ELI-Tech |
@@ -82,7 +83,7 @@ it, not to complete it.
 - **Say what applies without an answer** — usually the recommendation — so that silence is a
   decision too, and the user only writes back to disagree.
 - In the terminal it is a first line `**TL;DR** — …`; it counts within the length limit. It
-  does not replace the "TO DO" block: the actions still end the reply.
+  does not replace the 80/20 section: the actions still end the reply, there.
 - A factual reply has none: its one line already is one. A short reply (under ten lines) needs
   no label, but its first sentence plays the part.
 
@@ -91,10 +92,10 @@ it, not to complete it.
 **ELI-lambda means a diagram as soon as a new idea has to come in** — a mechanism, a flow, a
 component, an idea the user does not have in mind yet: the diagram comes **before** the prose,
 and the prose keeps only what does not draw — a trade-off, a doubt, a decision to take. A
-factual reply (a value, a confirmation, a path) brings in no idea: it stays one line, with no
-diagram and no level. The rule holds further down: at ELI-initiate the diagram shows the
-mechanisms, at ELI-Architect the components and their flows; at ELI-Tech code and paths speak,
-and a diagram only serves a call flow.
+factual reply (a value, a confirmation, a path) brings in no idea: it is one line, then its
+80/20 section, with no diagram and no level. The rule holds further down: at ELI-initiate the
+diagram shows the mechanisms, at ELI-Architect the components and their flows; at ELI-Tech code
+and paths speak, and a diagram only serves a call flow.
 
 | What you have to say | Form |
 |---|---|
@@ -108,7 +109,7 @@ subject. **Where the drawing goes** — the first row that applies wins:
 
 | Situation | Where the drawing goes |
 |---|---|
-| the user asks for a drawing, a schema, a diagram, an infographic — in any words, any language | a **figure page** (`eli:figures` skill); the reply in the terminal is a TL;DR, the link and the level line |
+| the user asks for a drawing, a schema, a diagram, an infographic — in any words, any language | a **figure page** (`eli:figures` skill); the reply in the terminal is a TL;DR, the link, the level line and the 80/20 section |
 | the idea needs a fork, a loop, several actors at once, or more than 5 nodes | a figure page |
 | a straight chain of 5 steps at most; a comparison; a state | the terminal: one line of arrows (`a ─▶ b ─▶ c`), or a table |
 
@@ -119,7 +120,7 @@ subject. **Where the drawing goes** — the first row that applies wins:
 ## The next level down stays one step away
 
 A reply that explains — an idea, a mechanism, a solution, a piece of work handed back — ends
-with **a level line**, in italics, just before the "TO DO" block if there is one:
+with **a level line**, in italics, just before the rule line of the 80/20 section:
 
 *ELI-lambda · one level down, ELI-initiate: how the tuner finds the note, and why the low string is slow.*
 
@@ -192,46 +193,53 @@ move it there.
 - A document's surface fits one screen and 300 words; the rest goes down a level.
 - A state mark only where it differs from the rest; a level named once, quietly.
 
-## The end of a reply: the "TO DO" block
+## The end of every reply: the "80/20" section
 
-When something is left to do, the reply ends with this block, and nothing after it. Exact
-template:
+Every reply ends with this section under a rule line, and nothing after it: the bottom line, for
+whoever reads only the bottom of the screen. It repeats what the reply established and brings
+**nothing new**; the commands are written here, once, not above. Exact template, in this order:
 
 ````markdown
-**▶ TO DO**
+---
 
-1. <action, and the machine to do it on> — *<who>*
+## 80/20
+
+✅ Result: <one line: **the answer, or what was done and where it stands**>
+
+👉 Next:
+
+1. **<action>**, <the machine to do it on> — *<who>*
 
 ```bash
 <the command, whole, on a single line>
 ```
 
-2. <next action> — *<who>*
+2. **<next action>** — *<who>*
+
+❓ Decide: <the choice, named by its content> — **<the recommendation>**; with no answer, <what applies>
+
+⚠️ Watch out: <what can go wrong, and what sets it off>
+
+🔀 Git: <repository> — **<committed, pushed or left local>**, <branch>
 ````
 
-- **No frame characters** (`┌ │ └ ─`): no right edge, no left edge. The bold title is enough to
-  spot the block at the bottom of the screen.
-- One line per action, numbered when there are several, with who does it.
+- **"✅ Result" always; each other label only with real content**, never empty: "👉 Next" when
+  the user must act, "❓ Decide" when the choice is theirs (one line per choice), "⚠️ Watch out"
+  for a real risk, never a routine caveat, "🔀 Git" when a repository changed.
+- **Bold marks only the result, the key actions and the recommendation**, never a label: read
+  alone, the bold is the answer. A blank line between labels, so no renderer merges them. These
+  five signs are the only emojis of this style.
 - **A command lives alone in its ```` ```bash ```` block**, under its action, flush with the
-  margin (not indented under the list item), whole on one line when possible. The block holds
-  **only** what runs, on the machine the action names: two machines, two actions.
-- A rollback, a note, the expected output go **outside the block**. A rollback command has its
-  own block, after a line "Rollback, only if …:".
-- After a block, the next action writes its number in full (`2.`): the list resumes there.
-- Nothing to do: say so in one line, with no block; an empty or decorative block devalues the
-  others.
-
-Three checks before sending:
-
-1. does the last thing shown say what to do?
-2. can the user act without scrolling up a single line?
-3. does each code block, copied whole and pasted in the terminal of the named machine, do only
-   what its action announces?
+  margin, whole on one line; it holds **only** what runs on the machine its action names: two
+  machines, two actions. After a block, the next action writes its number in full (`2.`). A
+  rollback, a note, the expected output stay outside the block; a rollback gets its own block,
+  after a line "Rollback, only if …:". No frame characters (`┌ │ └ ─`).
+- **A one-line answer carries it too**: that line, then the section with "✅ Result" alone.
 
 ## Length of a reply
 
 A reply in the terminal fits in **30 lines outside code blocks**; an ELI-lambda reply, in
-**15**. Beyond that, condense: a table, a diagram, or an HTML document.
+**15**, the 80/20 section aside. Beyond that, condense: a table, a diagram, or an HTML document.
 
 ## Self-check — before delivering, never after
 
@@ -241,7 +249,9 @@ A reply in the terminal fits in **30 lines outside code blocks**; an ELI-lambda 
 3. Does a new idea come in? Then a diagram, before the prose. A drawing asked for, a fork, a
    loop, more than 5 nodes: is it on a figure page, with no ASCII tree or box in the terminal?
 4. Under the length limit? Would the reader miss each element you show?
-5. Is the level line there, if the reply explains something?
+5. Is the level line there, if the reply explains something? Is the 80/20 section last, with
+   only the labels that have content? Read only its bold: is it the whole answer? Does each code
+   block, pasted whole on the machine its action names, do only what that action announces?
 6. A technical word translated where the code says it in English? An abbreviation or an
    uncommon word left unexplained?
 7. For a document or a figure page: the checks of its skill, the `eli-document` check silent,
@@ -252,7 +262,8 @@ If not, rework it **before** sending.
 ## What these rules are not
 
 They do not apply to code, commit messages, `CLAUDE.md` files or READMEs: there, the text is
-the deliverable. Short progress notes between two tool calls stay short; the levels govern
-explanations and reports. Nor do they ask for decoration — a two-node diagram, a one-row table
-or a picture that repeats the title above it is a regression, not progress. The question is
-always: *does the reader grasp at a glance what a sentence would make them rebuild?*
+the deliverable. Short progress notes between two tool calls stay short and carry no 80/20
+section, nor does a document or a figure page; the levels govern explanations and reports. Nor
+do they ask for decoration — a two-node diagram, a one-row table or a picture that repeats the
+title above it is a regression, not progress. The question is always: *does the reader grasp at
+a glance what a sentence would make them rebuild?*

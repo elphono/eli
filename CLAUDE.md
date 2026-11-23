@@ -7,7 +7,7 @@ vitrine ; ce fichier est le mode d'emploi de qui modifie le dépôt.
 
 | Pièce | Fichier | Testée par |
 |---|---|---|
-| le style de réponse | `output-styles/eli.md` (270 lignes au plus : il est renvoyé à chaque requête) | `tests/test_plugin.py` |
+| le style de réponse, dont la section « 80/20 » qui finit toute réponse | `output-styles/eli.md` (270 lignes au plus : il est renvoyé à chaque requête) | `tests/test_plugin.py` (gabarit de la section, plafond de lignes) |
 | le skill `eli:documents` et son gabarit | `skills/documents/` | `tests/test_plugin.py` (arbre du gabarit, largeur d'un zoom), `tests/test_figures.py` (rendu sans défaut, surface d'un écran) |
 | le skill `eli:figures` : gabarit, galerie des formes, `render.py` | `skills/figures/` | `tests/test_figures.py` |
 | le contrôle des documents (HTML, visuels, niveaux, surface, sigles) | `hooks/eli-document.py`, déclaré par `hooks/hooks.json` | `tests/test_eli_document.py` |
@@ -67,8 +67,10 @@ là où Playwright est installé ; Chromium s'installe une fois par `uvx playwri
 
 **Les évaluations** (`evals/`, `claude plugin eval`) mesurent qu'une session neuve suit la règle :
 une demande de dessin donne une page de figure sous `docs/`, jamais un dessin ASCII
-(`draw-on-request`, `named-level`), et une question fermée reste une ligne sans page
-(`closed-question`, le témoin). Chaque cas tourne avec et sans le plugin ; l'écart est la mesure.
+(`draw-on-request`, `named-level`), et une question fermée reste une ligne sans page, suivie de
+la section « 80/20 » réduite à sa ligne « ✅ Result » (`closed-question`), traduite quand la
+question est en français (`closed-question-french`). Chaque cas tourne avec et sans le plugin ;
+l'écart est la mesure : sans le plugin, le grader de la section tombe.
 
 ```bash
 uv sync --locked   # pyproject.toml impose link-mode = "copy" : l'outil refuse un plugin qui contient des liens physiques ; un .venv plus ancien se refait par uv sync --locked --reinstall

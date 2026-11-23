@@ -1,5 +1,4 @@
 ---
 type: regex
-match: not_contains
 ---
-\S[^\n]*\n\s*\S[^\n]*\n\s*\S
+^\s*[^\n]*\S[^\n]*(?:\n\s*---[ \t]*\n|\s*$)

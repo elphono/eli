@@ -173,7 +173,8 @@ Fix, render again. **Two passes at least**, and until the exit code is 0 and the
 
 - The page goes under `docs/<yyyy-mm-dd>-<subject>.html` of the project the user works in.
 - The reply in the terminal holds a TL;DR, the link with the level asked for (`...html#eli-lambda`),
-  and the level line of the `eli` style. The figure is in the page, not in the terminal.
+  the level line and the 80/20 section of the `eli` style. The figure is in the page, not in the
+  terminal.
 - If docpin is installed, its `docpin:annotatable-documents` skill says how to give the link and
   wait for notes.
 

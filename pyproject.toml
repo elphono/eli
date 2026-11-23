@@ -1,6 +1,6 @@
 [project]
 name = "eli"
-version = "0.4.2"
+version = "0.5.0"
 description = "Claude Code plugin: explain by levels, from plain words to code"
 requires-python = ">=3.12"
 license = "MIT"

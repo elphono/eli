@@ -300,3 +300,40 @@ def test_eval_scaffold_copies_are_identical():
     copies = {case.name: (case / "select-eli-style.sh").read_bytes() for case in cases}
     first = next(iter(copies.values()))
     assert {name for name, data in copies.items() if data != first} == set()
+
+# -- the 80/20 section that ends every reply ------------------------------------------------------
+
+STYLE_MAX_LINES = 270   # the style is sent with every request
+LABELS = ["✅ Result:", "👉 Next:", "❓ Decide:", "⚠️ Watch out:", "🔀 Git:"]
+
+def section_template() -> list[str]:
+    """The lines of the template of the 80/20 section, cut out of the style: the first
+    ````markdown fence under its heading, up to the fence that closes it. A label quoted
+    anywhere else in the style is not read."""
+    lines = STYLE.read_text(encoding="utf-8").splitlines()
+    heading = [i for i, line in enumerate(lines) if line.startswith("## ") and '"80/20"' in line]
+    assert len(heading) == 1, heading
+    start = next(i for i in range(heading[0], len(lines)) if lines[i] == "````markdown")
+    end = next(i for i in range(start + 1, len(lines)) if lines[i] == "````")
+    return lines[start + 1:end]
+
+def test_the_80_20_template_opens_with_a_rule_then_its_heading():
+    filled = [line for line in section_template() if line.strip()]
+    assert filled[:2] == ["---", "## 80/20"], filled[:2]
+
+def test_the_80_20_template_carries_the_five_labels_in_order():
+    found = [label for line in section_template() for label in LABELS if line.startswith(label)]
+    assert found == LABELS, found
+
+def test_the_style_names_no_to_do_block():
+    """The 80/20 section replaced the "TO DO" block: two endings would compete."""
+    assert "TO DO" not in STYLE.read_text(encoding="utf-8")
+
+def test_the_style_fits_in_its_line_budget():
+    count = len(STYLE.read_text(encoding="utf-8").splitlines())
+    assert count <= STYLE_MAX_LINES, count
+
+def test_the_readme_names_the_80_20_section():
+    readme = (REPO / "README.md").read_text(encoding="utf-8")
+    assert "80/20" in readme
+    assert "TO DO" not in readme
