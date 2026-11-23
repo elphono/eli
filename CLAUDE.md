@@ -38,8 +38,17 @@ fichier et les messages de commit sont en français.
   caractères ;
 - les zooms s'ouvrent par `dlg.show()`, jamais `showModal()` : la couche supérieure du navigateur
   passerait au-dessus de la bulle de note de docpin ;
-- aucune dépendance d'exécution : le hook n'emploie que la bibliothèque standard ; Playwright
-  n'est qu'une dépendance de développement, pour `render.py` et ses tests.
+- le plugin n'installe rien : le hook n'emploie que la bibliothèque standard. `render.py` porte
+  ses propres métadonnées (PEP 723, bloc `# /// script` en tête) : `uv run render.py` lui fournit
+  Playwright, à lui seul, depuis n'importe quel dossier, sans ce dépôt. L'épingle du script, sa
+  constante `PLAYWRIGHT` et la dépendance de développement de `pyproject.toml` sont la même
+  version (`test_the_script_pins_the_playwright_of_the_tests`) : en changer une, c'est changer
+  les trois ;
+- un mot contient au moins une lettre ou un chiffre, pour `render.py` (mots mesurés, libellés de
+  plus de 8 mots) comme pour le hook (mots de la surface) : un « : » isolé n'en est pas un ;
+- les skills parlent de leurs fichiers par `${CLAUDE_SKILL_DIR}`, que Claude Code remplace par le
+  dossier du `SKILL.md` (constaté le 2026-11-23 par une session `claude -p --plugin-dir`), et
+  disent quoi faire quand ils tournent dans un sous-agent, qui ne reçoit pas le style de sortie.
 
 Vérifier avant de pousser :
 
@@ -48,10 +57,13 @@ uv sync --locked && uv run playwright install chromium
 uv run pytest -q
 uv run ruff check hooks tests tools skills
 uv run python skills/figures/render.py skills/documents/template.html skills/figures/template.html skills/figures/forms.html --out /tmp/eli-render
+(cd "$(mktemp -d)" && uv run "$OLDPWD/skills/figures/render.py" "$OLDPWD/skills/figures/template.html" --out .)   # hors du dépôt : uv fournit Playwright
 claude plugin validate --json . > /tmp/r.json; python3 tools/check_plugin_report.py /tmp/r.json
 ```
 
 `render.py` sort en 0 sans défaut ; ses PNG se regardent, ils ne se jugent pas sur la table.
+La commande donnée par les skills est `uv run ${CLAUDE_SKILL_DIR}/render.py`, `python3` en repli
+là où Playwright est installé ; Chromium s'installe une fois par `uvx playwright@1.58.0 install chromium`.
 
 **Les évaluations** (`evals/`, `claude plugin eval`) mesurent qu'une session neuve suit la règle :
 une demande de dessin donne une page de figure sous `docs/`, jamais un dessin ASCII

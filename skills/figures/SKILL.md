@@ -26,6 +26,9 @@ Before any markup, write these four lines down (in your reply's working notes, n
 | a rare error case | hidden | note | shown | ELI-initiate |
 | an internal file name | hidden | hidden | hidden | nowhere |
 
+Then check, in one go and before drawing, every fact the figure will state (a number, a name,
+what calls what): all the searches and reads in one message, not one per node while drawing.
+
 ## 2. Choose the form
 
 | What the message says | Form | Drawn as |
@@ -103,11 +106,17 @@ path** (`data-tone`). Both keep the same meaning at every level of a page.
 
 ## 6. Build it
 
-1. Copy `template.html` (next to this file) to the page's place, set `<html lang>`, and replace
-   every sample, the labels of the level selector included.
-2. Take each figure's markup from `forms.html`, which shows every form and every shape. In a
-   `map`, a link sits in the grid cell between its source and its target, in their column.
-3. Keep the contract the page and render.py rely on:
+The page is born at its final place and is changed there with `Write` or `Edit`, never composed
+elsewhere and copied over: the document check and the hooks of other plugins answer those two
+tools only, on that path.
+
+1. Copy `template.html` to the page's place: `cp ${CLAUDE_SKILL_DIR}/template.html docs/<page>.html`.
+2. In one message, read whole the copy and `${CLAUDE_SKILL_DIR}/forms.html`, which shows every
+   form and every shape. The copy is the template: do not read the template as well.
+3. With `Edit` on the copy, in one message: set `<html lang>`, replace every sample, the labels of
+   the level selector included, and take each figure's markup from `forms.html`. In a `map`, a
+   link sits in the grid cell between its source and its target, in their column.
+4. Keep the contract the page and render.py rely on:
 
 | Element | Carries |
 |---|---|
@@ -128,8 +137,11 @@ path** (`data-tone`). Both keep the same meaning at every level of a page.
 ## 7. The render loop
 
 ```bash
-python3 <this skill's directory>/render.py PAGE --out <scratch folder>
+uv run ${CLAUDE_SKILL_DIR}/render.py PAGE --out <scratch folder>
 ```
+
+uv installs Playwright for this script alone, from any folder. Where Playwright is already
+installed, `python3 ${CLAUDE_SKILL_DIR}/render.py` does the same.
 
 It captures every level at 1400x900 light, 1400x900 dark and 390x844 light, and a term's
 definition shown, then prints one table of measures per level and one line per defect: sideways
@@ -139,7 +151,7 @@ an arrow whose end reaches no node. Exit code 0: no defect; 1: defects; 3: it ca
 says how to install Playwright and Chromium).
 
 The measures run in every window at every pass; a picture costs far more to read than a line.
-So open:
+So open, all the captures of a pass in one message:
 
 - **at every pass**, the 1400 light capture of each level (`*-1400-light.png`);
 - **at the last pass**, once the exit code is 0, every other capture too: dark, phone, term.
@@ -164,3 +176,14 @@ Fix, render again. **Two passes at least**, and until the exit code is 0 and the
   and the level line of the `eli` style. The figure is in the page, not in the terminal.
 - If docpin is installed, its `docpin:annotatable-documents` skill says how to give the link and
   wait for notes.
+
+## Run as a subagent
+
+When you run this skill as a subagent, for a caller that hands the result on:
+
+- if the ELI levels are not in your instructions, first read `output-styles/eli.md` of the
+  plugin, two folders above this skill (`${CLAUDE_SKILL_DIR}/../../output-styles/eli.md`);
+- start no background command meant to bring something back into the conversation (docpin's
+  `annotate wait`, for instance): it would die with you;
+- your final report gives the page's path and its link at the level asked for, the TL;DR, and
+  what the hooks answered, word for word: the caller hands over the link and waits.

@@ -401,6 +401,7 @@ HIDDEN_FROM_THE_SURFACE = [
     f"<div hidden>{FIFTY}</div>", f"<dialog><p>{FIFTY}</p></dialog>",   # not shown
     f"<details><summary></summary><p>{FIFTY}</p></details>",
     "→ · — ✓ " * 20,                                                   # no word in them
+    ": ? ! ; « » – _ " * 10,                                           # punctuation alone
 ]
 
 

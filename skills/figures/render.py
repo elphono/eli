@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.12"
+# dependencies = ["playwright==1.58.0"]
+# ///
 """Render an eli figure page (or an eli document) to PNG, and measure what a reader
 would trip on.
 
-    python3 render.py PAGE [PAGE ...] --out DIR
+    uv run render.py PAGE [PAGE ...] --out DIR       # from any folder: uv reads the block above
+    python3 render.py PAGE [PAGE ...] --out DIR      # where Playwright is already installed
 
 What is captured, state by state:
 
@@ -36,8 +41,12 @@ dark theme, an arrow left floating when the phone layout wraps. Measured in ever
 spare the reader of the render loop from opening every dark and phone capture at every pass.
 
 Exit codes: 0 no defect, 1 defects, 3 cannot render (Playwright or Chromium missing,
-a page that does not exist or does not load). Playwright is a development
-dependency of the eli plugin, never a runtime one.
+a page that does not exist or does not load). Playwright is never a dependency of the
+plugin itself: the inline script metadata above (PEP 723) lets `uv run` fetch it for this
+script alone, pinned to the version of the plugin's tests (PLAYWRIGHT).
+
+A word, in the measures and in a node label, holds at least one letter or one digit: a
+punctuation mark standing alone (":", "?", a dash, a quotation mark) is not one.
 """
 from __future__ import annotations
 
@@ -59,11 +68,15 @@ LABEL_WORDS = 8
 VIEWPORTS = (("1400", 1400, 900, "light"), ("1400", 1400, 900, "dark"), ("390", 390, 844, "light"))
 SETTLE_MS = 350
 
-MISSING_PLAYWRIGHT = ("render.py: Playwright is missing. In the eli repository: `uv sync` (it is a dev "
-                      "dependency), then `uv run playwright install chromium`; elsewhere: "
-                      "`pip install playwright==1.58.0 && python3 -m playwright install chromium`.")
-MISSING_CHROMIUM = ("render.py: Chromium for Playwright cannot start ({error}). Install it: "
-                    "`uv run playwright install chromium` (or `python3 -m playwright install chromium`).")
+# The version pinned in the script metadata above and in the dev dependencies of the plugin.
+PLAYWRIGHT = "1.58.0"
+INSTALL_CHROMIUM = f"uvx playwright@{PLAYWRIGHT} install chromium"
+
+MISSING_PLAYWRIGHT = ("render.py: Playwright is missing from this Python. Run the script with uv, which "
+                      "installs it for this script alone, from any folder: `uv run {script} PAGE --out DIR` "
+                      f"(Chromium, once: `{INSTALL_CHROMIUM}`).")
+MISSING_CHROMIUM = ("render.py: Chromium for Playwright cannot start ({error}). Install it once, from any "
+                    f"folder: `{INSTALL_CHROMIUM}`.")
 
 # Runs in the page. Returns the measures of the state as it is displayed, and its defects.
 MEASURE = r"""
@@ -86,6 +99,8 @@ MEASURE = r"""
     if (t) s += ` "${t.length > 48 ? t.slice(0, 47) + "…" : t}"`;
     return s;
   };
+  // A word holds a letter or a digit: a lone ":", "?" or dash is not one.
+  const isWord = (w) => /[\p{L}\p{N}]/u.test(w);
   const defects = [];
   const add = (kind, el, detail) => defects.push({kind, element: name(el), detail});
 
@@ -169,7 +184,7 @@ MEASURE = r"""
     range.selectNodeContents(t);
     const rects = [...range.getClientRects()].filter((r) => r.width > 0.5 && r.height > 0.5);
     if (!rects.length) continue;
-    words += t.data.trim().split(/\s+/).length;
+    words += t.data.trim().split(/\s+/).filter(isWord).length;
     let size = parseFloat(getComputedStyle(el).fontSize);
     if (el instanceof SVGElement && el.getScreenCTM && el.getScreenCTM()) {
       const m = el.getScreenCTM();
@@ -289,7 +304,7 @@ MEASURE = r"""
   }
   const longLabels = [...root.querySelectorAll("figure[data-figure] [data-node] .f-t")].filter(shown)
     .map((el) => (el.textContent || "").trim().replace(/\s+/g, " "))
-    .filter((text) => text.split(" ").length > labelWords);
+    .filter((text) => text.split(" ").filter(isWord).length > labelWords);
   return {defects, longLabels, figNodes, hscroll: Math.round(hscroll), cut: cut.size, overlaps,
           minFont: minFont === Infinity ? null : Math.round(minFont * 10) / 10, minAt,
           minRatio: minRatio === Infinity ? null : Math.round(minRatio * 100) / 100,
@@ -481,7 +496,7 @@ def main(argv: list[str] | None = None) -> int:
         from playwright.sync_api import Error as PlaywrightError
         from playwright.sync_api import sync_playwright
     except ImportError:
-        print(MISSING_PLAYWRIGHT, file=sys.stderr)
+        print(MISSING_PLAYWRIGHT.format(script=Path(__file__).resolve()), file=sys.stderr)
         return 3
     args.out.mkdir(parents=True, exist_ok=True)
     report: list[str] = []

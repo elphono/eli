@@ -33,10 +33,19 @@ Everything shown passes the style's test, *would the reader miss it?*:
 
 ## Start from the template
 
-Copy `template.html`, which sits in this skill's directory, to the document's place — for
-instance `docs/<yyyy-mm-dd>-<subject>.html` — then replace **every** sample text. The template
-is light and dark, reads at phone width and opens from the keyboard; it is resized without
-being rewritten:
+The document is born at its final place and is changed there with `Write` or `Edit`, never
+composed elsewhere and copied over: this plugin's check and the hooks of other plugins answer
+those two tools only, on that path. Before writing, check in one go every fact the document
+states: all the searches and reads in one message, not one per section while writing.
+
+1. Copy the template to the document's place:
+   `cp ${CLAUDE_SKILL_DIR}/template.html docs/<yyyy-mm-dd>-<subject>.html`.
+2. In one message, read the copy whole, and `${CLAUDE_SKILL_DIR}/../figures/forms.html` when a
+   zoom needs another form. The copy is the template: do not read the template as well.
+3. With `Edit` on the copy, in one message, replace **every** sample text.
+
+The template is light and dark, reads at phone width and opens from the keyboard; it is resized
+without being rewritten:
 
 | To | Do |
 |---|---|
@@ -125,7 +134,20 @@ the abbreviations nothing in the page defines; common ones (OK, PDF, URL, USB) a
 
 1. The `eli-document` check stayed silent. A page whose form is justified (a transcript, raw
    data) carries `<!-- eli: exemption — reason -->` in its first five lines.
-2. You rendered it with the `eli:figures` script — `python3 <that skill's directory>/render.py
-   PAGE --out <scratch folder>`: the surface and every zoom with its descents open, light, dark
-   and phone, a term shown — until it exits 0, and you **looked at** every PNG.
+2. You rendered it with the `eli:figures` script —
+   `uv run ${CLAUDE_SKILL_DIR}/../figures/render.py PAGE --out <scratch folder>` (uv installs
+   Playwright for it, from any folder; `python3` in place of `uv run` where Playwright is
+   installed): the surface and every zoom with its descents open, light, dark and phone, a term
+   shown — until it exits 0, and you **looked at** every PNG, those of a pass in one message.
 3. In the reply: the link to the surface, and one line on what to look at first.
+
+## Run as a subagent
+
+When you run this skill as a subagent, for a caller that hands the result on:
+
+- if the ELI levels are not in your instructions, first read `output-styles/eli.md` of the
+  plugin, two folders above this skill (`${CLAUDE_SKILL_DIR}/../../output-styles/eli.md`);
+- start no background command meant to bring something back into the conversation (docpin's
+  `annotate wait`, for instance): it would die with you;
+- your final report gives the document's path and its link at the level asked for, the TL;DR,
+  and what the hooks answered, word for word: the caller hands over the link and waits for notes.

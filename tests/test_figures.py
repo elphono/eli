@@ -12,6 +12,7 @@ import ast
 import re
 import subprocess
 import sys
+import tomllib
 from html.parser import HTMLParser
 from pathlib import Path
 
@@ -408,15 +409,66 @@ def test_render_measures_a_zoom_alone_with_its_descents_open(document):
 
 def test_render_exits_3_without_playwright(tmp_path):
     code, _, stderr = render(TEMPLATE, out=tmp_path, python=[sys.executable, "-S"])
-    assert code == 3 and "Playwright is missing" in stderr and "uv sync" in stderr
+    assert code == 3 and "Playwright is missing" in stderr
+    # the commands that work from any folder: the script run by uv, and Chromium at the pinned version
+    assert f"`uv run {RENDER} PAGE --out DIR`" in stderr, stderr
+    assert f"`uvx playwright@{constant('PLAYWRIGHT')} install chromium`" in stderr, stderr
 
 
 def test_render_exits_3_without_chromium(tmp_path):
     env = {**__import__("os").environ, "PLAYWRIGHT_BROWSERS_PATH": str(tmp_path / "no-browsers")}
     code, _, stderr = render(TEMPLATE, out=tmp_path, env=env)
-    assert code == 3 and "playwright install chromium" in stderr
+    assert code == 3 and f"`uvx playwright@{constant('PLAYWRIGHT')} install chromium`" in stderr, stderr
 
 
 def test_render_exits_3_on_a_page_that_does_not_exist(tmp_path):
     code, _, stderr = render(tmp_path / "nowhere.html", out=tmp_path)
     assert code == 3 and "no such page" in stderr
+
+
+# -- render.py runs from anywhere: its own metadata pins Playwright -------------------------------
+
+# The reference regular expression of PEP 723 (inline script metadata).
+PEP723 = re.compile(r"(?m)^# /// (?P<type>[a-zA-Z0-9-]+)$\s(?P<content>(^#(| .*)$\s)+)^# ///$")
+
+
+def script_metadata() -> dict:
+    blocks = [m for m in PEP723.finditer(RENDER.read_text(encoding="utf-8")) if m.group("type") == "script"]
+    assert len(blocks) == 1, "render.py carries one `# /// script` block"
+    content = "".join(line[2:] if line.startswith("# ") else line[1:]
+                      for line in blocks[0].group("content").splitlines(keepends=True))
+    return tomllib.loads(content)
+
+
+def test_the_script_pins_the_playwright_of_the_tests():
+    """`uv run render.py` installs what the block names: the same Playwright as the dev
+    dependencies, whose Chromium the tests install, and the same Python."""
+    project = tomllib.loads((REPO / "pyproject.toml").read_text(encoding="utf-8"))
+    pinned = [d for d in project["dependency-groups"]["dev"] if d.startswith("playwright")]
+    metadata = script_metadata()
+    assert metadata["dependencies"] == pinned == [f"playwright=={constant('PLAYWRIGHT')}"]
+    assert metadata["requires-python"] == project["project"]["requires-python"]
+
+
+LABELS = {
+    "eight words and a colon": "Le serveur : il prépare la recette pour vous",
+    "nine words and a colon": "Le serveur : il prépare la recette complète pour vous",
+}
+
+
+def test_a_lone_punctuation_mark_is_not_a_word(tmp_path):
+    """French sets a colon apart with spaces: a label of 8 words and a lone ":" is within
+    the budget of 8 words, and one more word goes over it."""
+    nodes = "".join(f'<div data-node="action"><span class="f-t">{label}</span></div>' for label in LABELS.values())
+    page = tmp_path / "labels.html"
+    page.write_text(f'<!doctype html><html lang="fr"><meta charset="utf-8"><body>'
+                    f'<figure data-figure="chain">{nodes}</figure>« ? ! ; – »</body></html>', encoding="utf-8")
+    code, stdout, stderr = render(page, out=tmp_path / "out")
+    assert code == 0, stdout + stderr
+    notes = [line for line in stdout.splitlines() if "a label over" in line]
+    expected = (f'note: labels.html page: a label over {constant("LABEL_WORDS")} words: '
+                f'"{LABELS["nine words and a colon"]}"')
+    assert notes == [expected], stdout
+    # the measured words: 8 + 9, neither the two colons nor the marks after the figure
+    row = next(line for line in stdout.splitlines() if line.strip().startswith("1400 light "))
+    assert row.split()[7] == "17", row

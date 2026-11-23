@@ -69,8 +69,11 @@ To try it, ask *"how does HTTPS keep my password secret?"*, then *"go deeper"*, 
 - **Claude Code** 2.1.275 or later.
 - **Python 3.12 or newer**, available as `python3`, for the document check. It installs no
   package.
-- To render and measure figures (`render.py` of `eli:figures`): Playwright 1.58 and its
-  Chromium. When they are missing, the script says how to install them.
+- To render and measure figures (`render.py` of `eli:figures`):
+  [uv](https://docs.astral.sh/uv/), which installs Playwright 1.58 for that script alone from
+  any folder (`uv run .../skills/figures/render.py PAGE --out DIR`), and Chromium, installed once
+  by `uvx playwright@1.58.0 install chromium`. Where Playwright 1.58 is already installed,
+  `python3` runs the script too. When something is missing, the script says how to install it.
 
 ## How a document is checked
 

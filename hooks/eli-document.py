@@ -97,6 +97,7 @@ _ABBREVIATION = re.compile(r"(?<![\w.-])([A-Z][A-Z0-9]{1,6})(?:s|['\u2019]s)?"
 _ROMAN = re.compile(r"[IVX]+")
 _LETTERS = re.compile(r"[^\W\d_]")
 _WORD = re.compile(r"[^\W\d_]+")
+_LETTER_OR_DIGIT = re.compile(r"[^\W_]")
 # Text that is code, not prose: an abbreviation in it is never counted.
 _CODE_TAGS = {"code", "pre", "kbd", "samp"}
 _NO_TEXT_TAGS = {"script", "style", "template", "noscript", "title"}
@@ -171,7 +172,8 @@ class _Markers(HTMLParser):
             return
         level = next((element.levels for element in reversed(self.open) if element.levels), set())
         if "lambda" in level and self._shown():
-            self.surface_words += sum(1 for word in data.split() if re.search(r"\w", word))
+            # a word holds a letter or a digit: a lone ":", "?", dash or "_" is not one
+            self.surface_words += sum(1 for word in data.split() if _LETTER_OR_DIGIT.search(word))
         if tags & _CODE_TAGS:
             return
         self.prose.append(data)
