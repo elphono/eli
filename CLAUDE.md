@@ -7,7 +7,7 @@ vitrine ; ce fichier est le mode d'emploi de qui modifie le dépôt.
 
 | Pièce | Fichier | Testée par |
 |---|---|---|
-| le style de réponse, dont la section « 80/20 » qui finit toute réponse | `output-styles/eli.md` (270 lignes au plus : il est renvoyé à chaque requête) | `tests/test_plugin.py` (gabarit de la section, plafond de lignes) |
+| le style de réponse : le niveau (jusqu'où descendre) et l'ordre des idées (la destination d'abord, puis la chaîne la plus courte), les formes, l'écriture, les commandes | `output-styles/eli.md` (270 lignes au plus : il est renvoyé à chaque requête) | `tests/test_plugin.py` (chaque règle lue là où elle vit, absence de section de fin, plafond de lignes) |
 | le skill `eli:documents` et son gabarit | `skills/documents/` | `tests/test_plugin.py` (arbre du gabarit, largeur d'un zoom), `tests/test_figures.py` (rendu sans défaut, surface d'un écran) |
 | le skill `eli:figures` : gabarit, galerie des formes, `render.py` | `skills/figures/` | `tests/test_figures.py` |
 | le contrôle des documents (HTML, visuels, niveaux, surface, sigles) | `hooks/eli-document.py`, déclaré par `hooks/hooks.json` | `tests/test_eli_document.py` |
@@ -65,12 +65,24 @@ claude plugin validate --json . > /tmp/r.json; python3 tools/check_plugin_report
 La commande donnée par les skills est `uv run ${CLAUDE_SKILL_DIR}/render.py`, `python3` en repli
 là où Playwright est installé ; Chromium s'installe une fois par `uvx playwright@1.58.0 install chromium`.
 
+**Le style n'a plus de section de fin.** La section « 80/20 » de la 0.5.0 a été retirée en 0.6.0
+à la demande de l'utilisateur (« c'est pire depuis qu'on l'a implémentée ») : la décision ou le
+verdict vont en tête, et un choix fait à sa place qui dépend de ce que lui seul sait y est
+signalé. Restent les règles des commandes, antérieures à la section.
+`test_the_style_carries_no_80_20_section` et les graders `no-80-20-section` fixent l'absence.
+
 **Les évaluations** (`evals/`, `claude plugin eval`) mesurent qu'une session neuve suit la règle :
 une demande de dessin donne une page de figure sous `docs/`, jamais un dessin ASCII
-(`draw-on-request`, `named-level`), et une question fermée reste une ligne sans page, suivie de
-la section « 80/20 » réduite à sa ligne « ✅ Result » (`closed-question`), traduite quand la
-question est en français (`closed-question-french`). Chaque cas tourne avec et sans le plugin ;
-l'écart est la mesure : sans le plugin, le grader de la section tombe.
+(`draw-on-request`, `named-level`) ; une question fermée reste une ligne sans page
+(`closed-question`, `closed-question-french`) ; une question posée s'ouvre sur la décision en
+titre de niveau 1 en capitales, dessine son embranchement dans un bloc de code et ne pose qu'une
+décision (`question-asked`) ; un compte rendu s'ouvre sur le verdict, sans raconter les moyens
+ni les vérifications non demandées (`report-verdict`, qui corrige un fichier posé) ;
+« explique-moi l'architecture » d'un petit projet posé donne une page de figure ouverte sur
+ELI-Architect, en français (`architecture-french`). Chaque cas tourne avec et sans le plugin ;
+l'écart est la mesure : sans le plugin, les graders de forme tombent (titre en capitales,
+embranchement, page ouverte sur ELI-Architect). L'absence de section 80/20 ne départage pas les
+deux bras : elle n'est pas un témoin.
 
 ```bash
 uv sync --locked   # pyproject.toml impose link-mode = "copy" : l'outil refuse un plugin qui contient des liens physiques ; un .venv plus ancien se refait par uv sync --locked --reinstall
@@ -81,7 +93,10 @@ claude plugin eval . --no-publish --trust-plugin --scaffold --allow-tools Write 
   `evals/results/`, ignoré par git.
 - `--scaffold` lance `select-eli-style.sh` de chaque cas, qui choisit le style `eli:eli` dans les
   réglages utilisateur du run, comme l'étape 2 de l'installation : sans lui, l'outil démarre en
-  style `default`, et le grader `style-active` tombe. Les trois copies du script sont identiques
+  style `default`, et le grader `style-active` tombe. Il copie aussi le dossier `workspace/` du
+  cas, s'il en a un, dans le dossier de travail de la session (le projet de `architecture-french`,
+  le fichier à corriger de `report-verdict`) : ces fichiers existent avant la session, ils
+  n'entrent donc pas dans la liste `files` des graders. Les copies du script sont identiques
   (`test_eval_scaffold_copies_are_identical`) : l'outil refuse un lien symbolique ou un chemin hors
   du cas.
 - **Pas de Bash dans les cas** : quand Bash est accordé, l'outil crée lui-même `settings.json`

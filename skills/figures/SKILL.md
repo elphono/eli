@@ -42,6 +42,12 @@ what calls what): all the searches and reads in one message, not one per node wh
 A comparison (options against criteria) is not a figure: it stays a table. A single number is a
 sentence. Two nodes are a sentence too.
 
+**How a project is built** (the architecture row of the style's inference table): the page carries
+the three levels and opens on ELI-Architect (`data-open` on its panel, a link ending in
+`#eli-architect`), so one click corrects a level too high or too low. Each level holds one figure
+per question: the overview (`map`) first, then one per flow that matters (`chain` or `lanes`),
+each with its own lead sentence; the least text, and no sentence cut short.
+
 ## 3. What each level shows and hides
 
 Ask of every element: **would the reader miss it if it were gone?** If not, hide it. If only
@@ -172,9 +178,8 @@ Fix, render again. **Two passes at least**, and until the exit code is 0 and the
 ## 8. Hand it over
 
 - The page goes under `docs/<yyyy-mm-dd>-<subject>.html` of the project the user works in.
-- The reply in the terminal holds a TL;DR, the link with the level asked for (`...html#eli-lambda`),
-  the level line and the 80/20 section of the `eli` style. The figure is in the page, not in the
-  terminal.
+- The reply in the terminal holds a TL;DR, the link with the level asked for (`...html#eli-lambda`)
+  and the level line of the `eli` style. The figure is in the page, not in the terminal.
 - If docpin is installed, its `docpin:annotatable-documents` skill says how to give the link and
   wait for notes.
 

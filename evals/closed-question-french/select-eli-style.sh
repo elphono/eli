@@ -8,7 +8,11 @@
 # fails on the file this script left. Both arms get the same
 # settings: only the plugin differs between them. The style-active grader of each case
 # checks that the session did start with the style.
+# A case that needs files in the session's working directory (a project to read, a file to
+# fix) keeps them in a workspace/ folder next to this script: the harness runs the script
+# in that directory, and the files are copied there, before the session starts.
 set -euo pipefail
+here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 config="$HOME/../config"
 if [ ! -f "$config/.claude.json" ]; then
   echo "no run config directory at $config: the eval harness layout changed" >&2
@@ -28,3 +32,6 @@ settings["outputStyle"] = "eli:eli"
 with open(path, "w", encoding="utf-8") as f:
     json.dump(settings, f, indent=2)
 PY
+if [ -d "$here/workspace" ]; then
+  cp -R "$here/workspace/." .
+fi

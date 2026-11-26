@@ -24,10 +24,16 @@ to get into, so eli gives Claude and you a shared vocabulary of named levels (EL
 - **Every explaining reply ends with a level line** that says which level it chose and what one
   notch down would hold, so a wrong guess is corrected in one word.
 - **ELI-lambda means a diagram** whenever a new idea comes in: a picture is how a new idea gets
-  into a brain. A plain factual answer is one line, then its 80/20 section.
-- **Every reply ends with an "80/20" section**, under a rule line: the result in one line, then,
-  only when they have real content, what you must do (with its commands), what is yours to
-  decide, a real risk, and what changed in git. Its bold text alone is the answer.
+  into a brain. A plain factual answer is one line.
+- **The destination comes first, then the shortest path to it.** A question opens on the
+  decision, as a heading in capitals, its options drawn as a fork in the terminal, each with only
+  what sets it apart; one question at a time. A report opens on its verdict (done, not done, done
+  in part) and keeps only what would change what you do: no list of the tests that passed. An
+  explanation opens on the answer. A choice Claude made for you that hangs on something only you
+  know is flagged at the top, with the other way.
+- **Ask how a project is built**, even your own one you no longer remember, and the answer is a
+  figure page at three levels that opens on ELI-Architect: one click up or down if that is the
+  wrong level.
 - **A drawing is a page, not ASCII art**: ask for a diagram, or let an idea fork, loop or pass
   between several actors, and Claude draws it on an HTML page at two or three levels, where a
   shape says what sort of thing a node is and a colour says who acts. The terminal keeps a
@@ -42,7 +48,7 @@ to get into, so eli gives Claude and you a shared vocabulary of named levels (EL
 
 | Piece | What it does |
 |---|---|
-| the **eli** output style | the levels, how to pick one, a TL;DR that stands on its own (each decision with its problem, its recommendation and what applies without an answer), technical words kept as the code spells them, the forms (diagram before prose, tables for comparisons), the level line, and an "80/20" section that ends every reply with its bottom line |
+| the **eli** output style | the levels, how to pick one, the order of a reply (the decision, the verdict or the answer first, then the shortest chain of steps to it), a TL;DR that stands on its own, a question asked one at a time with its options as a fork, a report filtered down to what changes what you do, sentences that stand alone, technical words kept as the code spells them and never translated word for word, the forms (diagram before prose, tables for comparisons), the level line, and the rules of a command you must run (alone in its block, on the machine it names) |
 | the **`eli:documents`** skill | how a document carries the levels, with a ready template: a one-screen surface, zooms as wide as the page, light and dark, phone width, keyboard, links that open a precise level (`#a-2`) |
 | the **`eli:figures`** skill | how to draw: what to show or hide at each level, five forms (chain, branch, cycle, lanes, map), six shapes and five colours that are their own legend, a template, a gallery, and `render.py`, which captures every level and measures what a reader would trip on |
 | the **eli-document** check | sends the session back to a document it just wrote when it is Markdown or has no visual, and warns when it lacks its levels or its TL;DR, loads from the network, has a surface over 300 words, uses an abbreviation it never explains, or holds too much prose per picture |

@@ -1,5 +1,5 @@
 ---
-description: Control case in French - a closed question gets a one-line answer, then the 80/20 section with its translated result label alone
+description: Control case in French - a closed question gets a one-line answer in French, with no 80/20 section and no page
 max_turns: 5
 timeout_seconds: 300
 allowed_tools: [Read, Glob, Grep, Skill, Write, Edit]

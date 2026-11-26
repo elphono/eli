@@ -301,39 +301,194 @@ def test_eval_scaffold_copies_are_identical():
     first = next(iter(copies.values()))
     assert {name for name, data in copies.items() if data != first} == set()
 
-# -- the 80/20 section that ends every reply ------------------------------------------------------
+# -- no "80/20" section: the reply ends on its chain, then the user's actions ---------------------
 
 STYLE_MAX_LINES = 270   # the style is sent with every request
-LABELS = ["✅ Result:", "👉 Next:", "❓ Decide:", "⚠️ Watch out:", "🔀 Git:"]
+LABELS = ["✅ Result", "👉 Next", "❓ Decide", "⚠️ Watch out", "🔀 Git"]   # the labels of the 0.5.0 section
 
-def section_template() -> list[str]:
-    """The lines of the template of the 80/20 section, cut out of the style: the first
-    ````markdown fence under its heading, up to the fence that closes it. A label quoted
-    anywhere else in the style is not read."""
-    lines = STYLE.read_text(encoding="utf-8").splitlines()
-    heading = [i for i, line in enumerate(lines) if line.startswith("## ") and '"80/20"' in line]
-    assert len(heading) == 1, heading
-    start = next(i for i in range(heading[0], len(lines)) if lines[i] == "````markdown")
-    end = next(i for i in range(start + 1, len(lines)) if lines[i] == "````")
-    return lines[start + 1:end]
-
-def test_the_80_20_template_opens_with_a_rule_then_its_heading():
-    filled = [line for line in section_template() if line.strip()]
-    assert filled[:2] == ["---", "## 80/20"], filled[:2]
-
-def test_the_80_20_template_carries_the_five_labels_in_order():
-    found = [label for line in section_template() for label in LABELS if line.startswith(label)]
-    assert found == LABELS, found
+def test_the_style_carries_no_80_20_section():
+    """The 80/20 section (0.5.0) was removed at the user's request: "it is worse since we put it
+    in". Neither its heading, nor its template, nor one of its labels may come back."""
+    text = STYLE.read_text(encoding="utf-8")
+    assert "80/20" not in text
+    assert not [label for label in LABELS if label in text]
+    assert not re.search(r"^(?:✅|👉|❓|🔀|⚠️)", text, re.MULTILINE)
 
 def test_the_style_names_no_to_do_block():
-    """The 80/20 section replaced the "TO DO" block: two endings would compete."""
+    """The "TO DO" block, which the 80/20 section replaced, does not come back either."""
     assert "TO DO" not in STYLE.read_text(encoding="utf-8")
 
 def test_the_style_fits_in_its_line_budget():
     count = len(STYLE.read_text(encoding="utf-8").splitlines())
     assert count <= STYLE_MAX_LINES, count
 
-def test_the_readme_names_the_80_20_section():
+def test_the_readme_names_no_80_20_section():
     readme = (REPO / "README.md").read_text(encoding="utf-8")
-    assert "80/20" in readme
+    assert "80/20" not in readme
     assert "TO DO" not in readme
+
+# -- the order of a reply: its destination first, then the shortest chain to it ------------------
+
+def style_section(title: str) -> str:
+    """The text of the "## " section of the style whose heading starts with `title`, up to the
+    next "## " heading: a rule quoted in another section is not read."""
+    lines = STYLE.read_text(encoding="utf-8").splitlines()
+    heads, fence = [], ""
+    for i, line in enumerate(lines):   # a heading inside a fenced block (a sample reply) is not one
+        mark = re.match(r"`{3,}", line)
+        if mark and (not fence or mark.group(0) == fence and line.strip() == fence):
+            fence = "" if fence else mark.group(0)
+        elif not fence and line.startswith("## "):
+            heads.append(i)
+    found = [i for i in heads if lines[i][3:].startswith(title)]
+    assert len(found) == 1, (title, found)
+    end = next((i for i in heads if i > found[0]), len(lines))
+    return "\n".join(lines[found[0] + 1:end])
+
+def table_after(text: str, header: str) -> list[list[str]]:
+    """The body rows of the table whose header row starts with `header`, cell by cell."""
+    lines = text.splitlines()
+    starts = [i for i, line in enumerate(lines) if line.startswith(header)]
+    assert len(starts) == 1, (header, starts)
+    rows = []
+    for line in lines[starts[0] + 2:]:
+        if not line.startswith("|"):
+            break
+        rows.append([cell.strip() for cell in line.strip().strip("|").split("|")])
+    return rows
+
+def bullets(text: str) -> list[str]:
+    """The top-level bullets of a text, each with its continuation lines joined."""
+    items: list[str] = []
+    open_item = False
+    for line in text.splitlines():
+        if line.startswith("- "):
+            items.append(line[2:])
+            open_item = True
+        elif open_item and line.startswith("  ") and line.strip():
+            items[-1] += " " + line.strip()
+        else:
+            open_item = False
+    return items
+
+def one(items: list[str], prefix: str) -> str:
+    found = [item for item in items if item.startswith(prefix)]
+    assert len(found) == 1, (prefix, found)
+    return found[0]
+
+def row(rows: list[list[str]], prefix: str) -> tuple[int, list[str]]:
+    found = [(i, r) for i, r in enumerate(rows) if r[0].startswith(prefix)]
+    assert len(found) == 1, (prefix, [r[0] for r in rows])
+    return found[0]
+
+def test_the_style_opens_on_its_two_axes_the_level_and_the_order():
+    """The level says how far down a reply goes, the order how its ideas follow each other: both
+    are said before the first section, so that every rule below is read through them."""
+    opening = STYLE.read_text(encoding="utf-8").split("\n# ", 1)[1].split("\n## ", 1)[0]
+    flat = " ".join(opening.split())
+    assert "**The level**" in flat and "**The order**" in flat
+    assert "the destination first" in flat and "with no jump" in flat
+    assert "A number or a detail never comes before the decision it serves" in flat
+
+def test_a_reply_opens_on_its_destination():
+    """A question opens on its decision, a report on its verdict, an explanation on its answer."""
+    rows = table_after(style_section("The TL;DR"), "| The reply |")
+    question = row(rows, "a question to the user")[1][1]
+    assert "level-1 heading in capitals" in question
+    heading = re.search(r"`# ([^`]+)`", question)
+    assert heading and heading.group(1) == heading.group(1).upper(), question
+    report = row(rows, "a report:")[1][1]
+    assert "done, not done, or done in part" in report and "what failed exactly" in report
+    assert row(rows, "a report that leads to a decision")[1][1].startswith("the decision")
+    assert row(rows, "an explanation")[1][1].startswith("the answer to the question asked")
+
+def test_a_question_asks_one_thing_and_says_why_it_needs_the_user():
+    section = style_section("The TL;DR")
+    paragraphs = [" ".join(p.split()) for p in section.split("\n\n")]
+    question = one(paragraphs, "**A question asks one thing**")
+    assert "the one that blocks most" in question and "the others wait, unasked, until it is answered" in question
+    steps = ["its fork", "only what sets it apart", "numbers after", "why the question matters",
+             "the recommendation and what applies without an answer"]
+    places = [question.find(step) for step in steps]
+    assert -1 not in places and places == sorted(places), dict(zip(steps, places))
+    tool = one(bullets(section), "Through a multiple-choice question tool")
+    assert "its title" in tool and "before the call" in tool
+
+def test_a_report_keeps_only_what_would_change_what_the_reader_does():
+    """The filter of a report sharpens "Show less"; a check not made is a risk, and is said."""
+    rule = one(bullets(style_section("Show less")), "**A report sharpens the test")
+    assert "would the reader do anything different for knowing it?" in rule
+    for consequence in ("means used unasked", "an example worked out as proof", "only if it was asked for or failed",
+                        "**not** made is a risk", "leaves a trace", "only if it calls for a decision",
+                        "a routine caveat is not", "a subject raised once"):
+        assert consequence in rule, consequence
+
+def test_the_fork_of_a_question_is_the_one_drawing_left_in_the_terminal():
+    section = style_section("What each level shows")
+    rows = table_after(section, "| Situation |")
+    place, fork = row(rows, "the options of the question the reply asks")
+    assert "the terminal" in fork[1] and "fork" in fork[1] and "code block" in fork[1]
+    assert place < row(rows, "the idea needs a fork")[0], "the first row wins: the fork before the page"
+    rules = bullets(section)
+    never = [i for i, rule in enumerate(rules) if rule.startswith("**Never an ASCII tree")]
+    assert len(never) == 1 and never[0] + 1 < len(rules)
+    exception = rules[never[0] + 1]
+    assert exception.startswith("**One exception, the fork of a question**")
+    for word in ("code block", "not bullets", "No box, no frame", "never `↗ ↘`", "Two to four options"):
+        assert word in exception, word
+    blocks = re.findall(r"^```text\n(.*?)^```$", section, re.MULTILINE | re.DOTALL)
+    assert len(blocks) == 1, blocks
+    arrows = [line for line in blocks[0].splitlines() if "─▶" in line]
+    assert len(arrows) >= 2 and len({line.index("─▶") for line in arrows}) == 1, arrows
+    assert {line[line.index("─▶") - 1] for line in arrows} >= {"┌", "└"}, "one direction per option"
+    assert not set("↗↘┏┓┗┛╔╗╚╝") & set(blocks[0])
+
+def test_a_choice_made_in_the_users_place_is_flagged_in_the_opening():
+    """A question blocks; a choice the work made for the user, which hangs on what only they know,
+    does not block but is flagged every time, at the top of the reply, never at its end."""
+    flag = one(bullets(style_section("The TL;DR")), "**A choice the work made in the user's place")
+    for word in ("only they know", "flagged every time, in the opening**", "right after the decision or the verdict",
+                 "one line per choice", "what was chosen in bold", "the other way", "what it hangs on",
+                 "does not block"):
+        assert word in flag, word
+
+def test_the_commands_keep_their_rules():
+    """The rules of a command predate the 80/20 section and outlive it: one command alone in its
+    block, the machine named, a rollback outside the block."""
+    section = style_section("What the user must do")
+    flat = " ".join(section.split())
+    assert "comes last" in flat and "each naming the machine it runs on" in flat
+    rule = one(bullets(section), "**A command lives alone in its")
+    for word in ("```bash", "whole on one line", "two machines, two actions", "writes its number in full",
+                 "stay outside the block", '"Rollback, only if …:"'):
+        assert word in rule, word
+
+def test_each_sentence_stands_alone_and_no_term_is_translated_word_for_word():
+    rules = bullets(style_section("Writing"))
+    whole = one(rules, "**Fewer sentences")
+    assert "**Every sentence stands alone**" in whole and '"it failed"' in whole and "out loud" in whole
+    terms = one(rules, "**Technical words as the code says them")
+    assert "never translated word for word" in terms and "everyday words" in terms
+
+def test_how_a_project_is_built_is_read_at_architect_on_a_figure_page():
+    rows = table_after(style_section("Which level"), "| Signal in the user's message |")
+    place, (signal, level) = row(rows, "how a project or a system is built")
+    assert "the user's own project included" in signal and "names a file or a folder" in signal
+    assert level.startswith("ELI-Architect") and "figure page" in level
+    assert '"how is this function coded" stays ELI-Tech' in level
+    assert place < row(rows, "a file, a function")[0], "the first row wins: a file named is no ELI-Tech here"
+    page = row(table_after(style_section("What each level shows"), "| Situation |"), "how a project is built")
+    for word in ("three levels", "open on ELI-Architect", "#eli-architect", "overview first", "one per flow",
+                 "lead sentence", "no sentence cut short"):
+        assert word in page[1][1], word
+
+def test_the_self_check_asks_after_each_rule_without_growing():
+    section = style_section("Self-check")
+    assert len(re.findall(r"^\d+\. ", section, re.MULTILINE)) <= 7   # as many questions as in 0.5.0
+    flat = " ".join(section.split())
+    for asked in ("open on its destination", "level-1 heading in capitals", "no number before the decision",
+                  "A question: one only", "its fork in a code block", "in a report act otherwise",
+                  "A check not made", "flagged in the opening", "The actions last", "each sentence standing alone",
+                  "word for word",
+                  "an architecture"):
+        assert asked in flat, asked
